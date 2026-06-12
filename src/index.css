@@ -1,0 +1,469 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand Palette */
+  --primary: #7026b9;       /* Deep purple */
+  --primary-light: #f2eafd; /* Light purple for backgrounds */
+  --secondary: #ff6b00;     /* Energetic orange */
+  --secondary-light: #fff0e6;
+  --accent: #ffd000;        /* Playful yellow */
+  --accent-light: #fffdeb;
+  --success: #00e676;
+  --danger: #ff1744;
+  --neutral-dark: #2d3436;  /* Soft black */
+  --neutral-gray: #7f8c8d;
+  --neutral-light: #f7f9fa;
+  --bg-gradient: linear-gradient(135deg, #fbfaff 0%, #f6f0ff 50%, #fff7f2 100%);
+  --white: #ffffff;
+  --border: #e0d9f0;
+  --border-radius-sm: 8px;
+  --border-radius-md: 16px;
+  --border-radius-lg: 24px;
+  --border-radius-xl: 36px;
+  --shadow-sm: 0 4px 6px -1px rgba(112, 38, 185, 0.08), 0 2px 4px -1px rgba(112, 38, 185, 0.04);
+  --shadow-md: 0 10px 20px -5px rgba(112, 38, 185, 0.12), 0 8px 16px -8px rgba(112, 38, 185, 0.06);
+  --shadow-lg: 0 20px 25px -5px rgba(112, 38, 185, 0.15), 0 10px 10px -5px rgba(112, 38, 185, 0.04);
+  --transition-bouncy: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --transition-smooth: all 0.3s ease;
+  
+  --sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Global Resets */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg-gradient);
+  color: var(--neutral-dark);
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  border-inline: none;
+  text-align: left;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading);
+  font-weight: 700;
+  color: var(--neutral-dark);
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: -0.01em;
+}
+
+p {
+  font-size: 1rem;
+  color: #57606f;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-smooth);
+}
+
+button {
+  font-family: var(--sans);
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+  transition: var(--transition-bouncy);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--neutral-light);
+}
+::-webkit-scrollbar-thumb {
+  background: #d1c4e9;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b39ddb;
+}
+
+/* Layout Utilities */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Badges & Tags */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-primary {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.badge-secondary {
+  background: var(--secondary-light);
+  color: var(--secondary);
+}
+
+.badge-success {
+  background: rgba(0, 230, 118, 0.1);
+  color: #00b0ff; /* adjusted for contrast or use standard color */
+}
+
+/* Form controls */
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--neutral-dark);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-md);
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--neutral-dark);
+  background: var(--white);
+  transition: var(--transition-smooth);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(112, 38, 185, 0.15);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Custom Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--border-radius-xl);
+  text-align: center;
+  transition: var(--transition-bouncy);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 8px 16px rgba(112, 38, 185, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 20px rgba(112, 38, 185, 0.3);
+  background: #5e1fa0;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--white);
+  box-shadow: 0 8px 16px rgba(255, 107, 0, 0.2);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 20px rgba(255, 107, 0, 0.3);
+  background: #e66000;
+}
+
+.btn-light {
+  background: var(--white);
+  color: var(--primary);
+  border: 2px solid var(--border);
+}
+
+.btn-light:hover {
+  transform: translateY(-2px);
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: var(--white);
+  box-shadow: 0 6px 12px rgba(255, 23, 68, 0.2);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  background: #d50000;
+}
+
+/* Animation Utilities */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-soft {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+/* Wavy decorations */
+.wavy-card {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-bouncy);
+}
+
+.wavy-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.stars {
+  display: flex;
+  color: #ffb300;
+  gap: 2px;
+}
+
+/* =============================================
+   CATEGORY IMAGE TILES (Home Page)
+   ============================================= */
+.cat-img-bubble {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 14px;
+  border: 3px solid var(--primary-light);
+  box-shadow: 0 4px 16px rgba(112, 38, 185, 0.18);
+  transition: var(--transition-bouncy);
+}
+
+.cat-img-bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.category-quick-card:hover .cat-img-bubble {
+  border-color: var(--secondary);
+  box-shadow: 0 8px 24px rgba(255, 107, 0, 0.25);
+}
+
+.category-quick-card:hover .cat-img-bubble img {
+  transform: scale(1.15);
+}
+
+/* =============================================
+   ADMIN PANEL — CATEGORY CARDS GRID
+   ============================================= */
+.cat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.cat-admin-card {
+  position: relative;
+  border-radius: var(--border-radius-md);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-bouncy);
+  display: flex;
+  flex-direction: column;
+}
+
+.cat-admin-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.cat-admin-img-wrap {
+  width: 100%;
+  height: 110px;
+  overflow: hidden;
+  background: var(--primary-light);
+}
+
+.cat-admin-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.cat-admin-card:hover .cat-admin-img-wrap img {
+  transform: scale(1.1);
+}
+
+.cat-admin-info {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.cat-admin-info h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--neutral-dark);
+  margin: 0;
+}
+
+.cat-prod-count {
+  font-size: 0.75rem;
+  color: var(--neutral-gray);
+  font-weight: 500;
+}
+
+.cat-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 23, 68, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: scale(0.8);
+}
+
+.cat-admin-card:hover .cat-delete-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* =============================================
+   ADMIN PANEL — CATEGORY FORM PREVIEW
+   ============================================= */
+.cat-form-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--primary-light);
+  border-radius: var(--border-radius-md);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1.5px dashed var(--primary);
+}
+
+.cat-preview-img-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--primary);
+  flex-shrink: 0;
+}
+
+.cat-preview-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cat-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cat-preview-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.cat-preview-hint {
+  font-size: 0.72rem;
+  color: var(--neutral-gray);
+}
