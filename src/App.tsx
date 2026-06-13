@@ -229,6 +229,13 @@ function App() {
     setCartOpen(true); // Open the sidebar drawer for confirmation
   };
 
+  const handleDeleteProduct = (productId: string) => {
+    if (products.find((p) => p.id === productId)) {
+      const updated = products.filter((p) => p.id !== productId);
+      handleUpdateProducts(updated);
+    }
+  };
+
   const handleBuyNow = (product: Product, quantity: number = 1) => {
     const existing = cart.find((item) => item.product.id === product.id);
     let updated: CartItem[];
@@ -358,6 +365,8 @@ function App() {
                     onAddToCart={handleAddToCart}
                     onBuyNow={handleBuyNow}
                     onSelectProduct={setSelectedProductId}
+                    isLoggedInAdmin={isLoggedInAdmin}
+                    onDeleteProduct={handleDeleteProduct}
                   />
                 ))}
               </div>
@@ -407,6 +416,8 @@ function App() {
                     onAddToCart={handleAddToCart}
                     onBuyNow={handleBuyNow}
                     onSelectProduct={setSelectedProductId}
+                    isLoggedInAdmin={isLoggedInAdmin}
+                    onDeleteProduct={handleDeleteProduct}
                   />
                 ))}
               </div>
@@ -566,6 +577,22 @@ function App() {
                     Buy Now
                   </button>
                 </div>
+
+                {/* Admin Delete from Modal */}
+                {isLoggedInAdmin && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Delete "${selectedProduct.title}"? This cannot be undone.`)) {
+                        handleDeleteProduct(selectedProduct.id);
+                        setSelectedProductId(null);
+                      }
+                    }}
+                    className="btn btn-danger modal-admin-delete-btn"
+                    style={{ width: '100%', marginTop: '12px' }}
+                  >
+                    🗑️ Delete This Product (Admin)
+                  </button>
+                )}
 
               </div>
             </div>

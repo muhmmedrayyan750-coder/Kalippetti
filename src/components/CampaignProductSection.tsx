@@ -17,16 +17,16 @@ export const CampaignProductSection: React.FC<CampaignProductSectionProps> = ({ 
     <section className="campaign-product-section container animate-slide-in">
       <div className="campaign-product-grid">
         <div className="campaign-image-col">
-          <img 
-            src={campaignProduct.imageUrl} 
-            alt={campaignProduct.title} 
+          <img
+            src={campaignProduct.imageUrl}
+            alt={campaignProduct.title}
             className="campaign-main-image"
           />
         </div>
-        
+
         <div className="campaign-info-col">
           <h1 className="campaign-title">{campaignProduct.title}</h1>
-          
+
           <div className="campaign-price-row">
             {campaignProduct.originalPrice && (
               <span className="campaign-original-price">Rs. {campaignProduct.originalPrice.toFixed(2)}</span>
@@ -34,9 +34,9 @@ export const CampaignProductSection: React.FC<CampaignProductSectionProps> = ({ 
             <span className="campaign-sale-price">Rs. {campaignProduct.price.toFixed(2)}</span>
             <span className="campaign-sale-badge">Sale</span>
           </div>
-          
+
           <p className="campaign-shipping-note">Shipping calculated at checkout.</p>
-          
+
           <div className="campaign-quantity-selector">
             <label>Quantity</label>
             <div className="quantity-controls">
@@ -45,16 +45,16 @@ export const CampaignProductSection: React.FC<CampaignProductSectionProps> = ({ 
               <button onClick={increaseQty} className="qty-btn">+</button>
             </div>
           </div>
-          
+
           <div className="campaign-actions">
-            <button 
+            <button
               onClick={() => onAddToCart(campaignProduct, quantity)}
               className="btn btn-light campaign-add-cart-btn"
             >
               Add to cart
             </button>
-            
-            <button 
+
+            <button
               onClick={() => onBuyNow(campaignProduct, quantity)}
               className="btn btn-primary campaign-buy-now-btn animate-pulse-soft"
               style={{ backgroundColor: '#eb6136', borderColor: '#eb6136', color: 'white' }}

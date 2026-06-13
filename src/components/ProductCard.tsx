@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, ShoppingCart, Percent } from 'lucide-react';
+import { Star, ShoppingCart, Percent, Trash2 } from 'lucide-react';
 
 export interface Product {
   id: string;
@@ -19,6 +19,8 @@ interface ProductCardProps {
   onAddToCart: (product: Product) => void;
   onBuyNow: (product: Product) => void;
   onSelectProduct: (productId: string) => void;
+  isLoggedInAdmin?: boolean;
+  onDeleteProduct?: (productId: string) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -26,6 +28,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onBuyNow,
   onSelectProduct,
+  isLoggedInAdmin = false,
+  onDeleteProduct,
 }) => {
   const calculateDiscount = () => {
     if (!product.originalPrice || product.originalPrice <= product.price) return 0;
@@ -35,6 +39,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const discountPercent = calculateDiscount();
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Delete "${product.title}"? This cannot be undone.`)) {
+      onDeleteProduct?.(product.id);
+    }
+  };
+
   return (
     <div className="product-card wavy-card">
       {/* Discount Ribbon */}
@@ -43,6 +54,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Percent size={12} />
           <span>{discountPercent}% OFF</span>
         </div>
+      )}
+
+      {/* Admin Delete Button */}
+      {isLoggedInAdmin && (
+        <button
+          className="card-admin-delete-btn"
+          onClick={handleDelete}
+          title="Delete this product"
+        >
+          <Trash2 size={15} />
+        </button>
       )}
 
       {/* Product Image */}
@@ -147,6 +169,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           gap: 3px;
           z-index: 5;
           box-shadow: 0 4px 8px rgba(255, 107, 0, 0.25);
+        }
+        .card-admin-delete-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 20;
+          background: rgba(255, 23, 68, 0.92);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(255,23,68,0.4);
+          transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .card-admin-delete-btn:hover {
+          background: #c60029;
+          transform: scale(1.12);
         }
         .product-image-container {
           width: 100%;
