@@ -39,10 +39,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const discountPercent = calculateDiscount();
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const [showConfirm, setShowConfirm] = React.useState(false);
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`Delete "${product.title}"? This cannot be undone.`)) {
+    e.preventDefault();
+    if (showConfirm) {
       onDeleteProduct?.(product.id);
+      setShowConfirm(false);
+    } else {
+      setShowConfirm(true);
     }
   };
 
@@ -58,13 +64,35 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Admin Delete Button */}
       {isLoggedInAdmin && (
-        <button
-          className="card-admin-delete-btn"
-          onClick={handleDelete}
-          title="Delete this product"
-        >
-          <Trash2 size={15} />
-        </button>
+        showConfirm ? (
+          <div className="card-delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="card-admin-delete-confirm-btn"
+              onClick={handleDeleteClick}
+              title="Confirm delete"
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              className="card-admin-delete-cancel-btn"
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowConfirm(false); }}
+              title="Cancel"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="card-admin-delete-btn"
+            onClick={handleDeleteClick}
+            title="Delete this product"
+          >
+            <Trash2 size={15} />
+          </button>
+        )
       )}
 
       {/* Product Image */}
@@ -330,6 +358,45 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           box-shadow: none;
           cursor: not-allowed;
           transform: none;
+        }
+        .card-delete-confirm-wrapper {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 30;
+          display: flex;
+          gap: 4px;
+          background: rgba(255, 255, 255, 0.95);
+          padding: 4px;
+          border-radius: 6px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          border: 1px solid var(--border);
+        }
+        .card-admin-delete-confirm-btn {
+          background: rgba(255, 23, 68, 0.95);
+          color: white;
+          border: none;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          font-weight: 800;
+          cursor: pointer;
+        }
+        .card-admin-delete-confirm-btn:hover {
+          background: #c60029;
+        }
+        .card-admin-delete-cancel-btn {
+          background: #f1f5f9;
+          color: #475569;
+          border: none;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          font-weight: 800;
+          cursor: pointer;
+        }
+        .card-admin-delete-cancel-btn:hover {
+          background: #cbd5e1;
         }
       `}</style>
     </div>

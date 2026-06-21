@@ -233,6 +233,17 @@ function App() {
     if (products.find((p) => p.id === productId)) {
       const updated = products.filter((p) => p.id !== productId);
       handleUpdateProducts(updated);
+
+      // Clean up campaign if it matches the deleted product
+      if (campaign && campaign.id === productId) {
+        handleUpdateCampaign(null);
+      }
+
+      // Clean up cart items containing the deleted product
+      const updatedCart = cart.filter((item) => item.product.id !== productId);
+      if (updatedCart.length !== cart.length) {
+        syncCart(updatedCart);
+      }
     }
   };
 
@@ -545,10 +556,6 @@ function App() {
                   <div className="highlight-item">
                     <span>👶</span>
                     <b>Age 3+ Safe</b>
-                  </div>
-                  <div className="highlight-item">
-                    <span>🧠</span>
-                    <b>Mind Development</b>
                   </div>
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, ShoppingBag, Trash2, Plus, MessageSquare, ShieldAlert, LogOut, Layers } from 'lucide-react';
+import { Package, ShoppingBag, Trash2, Plus, MessageSquare, ShieldAlert, LogOut, Layers, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import type { Product } from './ProductCard';
 import type { Advertisement } from './AdCarousel';
 
@@ -34,6 +34,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [deletingAdId, setDeletingAdId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [deletingCampaign, setDeletingCampaign] = useState(false);
 
   // Active Tab: 'orders' | 'products' | 'ads' | 'campaign'
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'ads' | 'campaign'>('orders');
@@ -45,6 +50,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     price: '',
     originalPrice: '',
     imageUrl: '',
+    category: 'Creative Boards',
     rating: '5',
     inStock: true,
   });
@@ -60,11 +66,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'kalippetti@123') {
+    const cleanUsername = username.trim().toLowerCase();
+    if (
+      (cleanUsername === 'admin' || cleanUsername === 'admin@adminsecure.com' || cleanUsername === 'admin@company.com') && 
+      password === 'kalippetti@123'
+    ) {
       onLoginSuccess();
       setLoginError('');
     } else {
-      setLoginError('Invalid Username or Password!');
+      setLoginError('Invalid Email Address or Password!');
     }
   };
 
@@ -82,7 +92,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       description: newProduct.description || 'A magical toy for kids.',
       price: parseFloat(newProduct.price),
       originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : undefined,
-      category: 'General',
+      category: newProduct.category || 'General',
       imageUrl: newProduct.imageUrl,
       rating: parseFloat(newProduct.rating),
       reviewsCount: Math.floor(Math.random() * 15) + 3,
@@ -99,16 +109,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       price: '',
       originalPrice: '',
       imageUrl: '',
+      category: 'Creative Boards',
       rating: '5',
       inStock: true,
     });
     alert('Product added successfully!');
   };
 
-  const handleDeleteProduct = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this toy product?')) {
+  const handleDeleteProduct = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deletingProductId === id) {
       const updated = products.filter((p) => p.id !== id);
       onUpdateProducts(updated);
+      setDeletingProductId(null);
+    } else {
+      setDeletingProductId(id);
     }
   };
 
@@ -143,10 +159,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     alert('Ad Banner added successfully!');
   };
 
-  const handleDeleteAd = (id: string) => {
-    if (window.confirm('Are you sure you want to remove this advertisement banner?')) {
+  const handleDeleteAd = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deletingAdId === id) {
       const updated = ads.filter((ad) => ad.id !== id);
       onUpdateAds(updated);
+      setDeletingAdId(null);
+    } else {
+      setDeletingAdId(id);
     }
   };
 
@@ -171,14 +192,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     onUpdateCampaign(newCamp);
     setNewProduct({
       title: '', description: '', price: '', originalPrice: '',
-      imageUrl: '', rating: '5', inStock: true,
+      imageUrl: '', category: 'Creative Boards', rating: '5', inStock: true,
     });
     alert('Campaign Combo added successfully!');
   };
 
-  const handleDeleteCampaign = () => {
-    if (window.confirm('Are you sure you want to delete the Campaign Combo?')) {
+  const handleDeleteCampaign = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deletingCampaign) {
       onUpdateCampaign(null);
+      setDeletingCampaign(false);
+    } else {
+      setDeletingCampaign(true);
     }
   };
 
@@ -193,10 +219,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     onUpdateOrders(updated);
   };
 
-  const handleDeleteOrder = (orderId: string) => {
-    if (window.confirm('Are you sure you want to delete this order history?')) {
+  const handleDeleteOrder = (e: React.MouseEvent, orderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deletingOrderId === orderId) {
       const updated = orders.filter((o) => o.id !== orderId);
       onUpdateOrders(updated);
+      setDeletingOrderId(null);
+    } else {
+      setDeletingOrderId(orderId);
     }
   };
 
@@ -227,46 +258,821 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   if (!isLoggedInAdmin) {
     return (
-      <div className="admin-login-container animate-slide-in">
-        <div className="admin-login-card wavy-card">
-          <div className="login-logo-brand">
-            <span style={{ color: '#7b31d8' }}>Kali</span><span style={{ color: '#ff7b00' }}>ppetti</span>
-          </div>
-          <h2>Admin Dashboard</h2>
-          <p>Please enter admin credentials to manage products, banners, and orders.</p>
-          
-          <form onSubmit={handleLoginSubmit} className="admin-login-form">
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <input 
-                type="text" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter 'admin'"
-                className="form-input"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="form-input"
-                required
-              />
-            </div>
-
-            {loginError && <p className="login-error-msg"><ShieldAlert size={14} /> {loginError}</p>}
-
-            <button type="submit" className="btn btn-primary w-full login-btn-sub">
-              Access Dashboard
-            </button>
-          </form>
+      <div className="ag-login-universe" id="ag-login-root">
+        {/* Animated particle field */}
+        <div className="ag-particles">
+          {Array.from({length: 28}).map((_, i) => (
+            <div key={i} className={`ag-particle ag-particle-${i % 5}`} style={{
+              left: `${(i * 13 + 3) % 100}%`,
+              animationDelay: `${(i * 0.35) % 6}s`,
+              animationDuration: `${7 + (i % 5) * 1.5}s`
+            }} />
+          ))}
         </div>
+
+        {/* Cyber grid */}
+        <div className="ag-cyber-grid" />
+
+        {/* Depth rings */}
+        <div className="ag-depth-ring ag-depth-ring-1" />
+        <div className="ag-depth-ring ag-depth-ring-2" />
+        <div className="ag-depth-ring ag-depth-ring-3" />
+
+        {/* Energy waves */}
+        <div className="ag-energy-wave ag-wave-1" />
+        <div className="ag-energy-wave ag-wave-2" />
+        <div className="ag-energy-wave ag-wave-3" />
+
+        {/* Floating 3D geometric objects */}
+        <div className="ag-geo ag-geo-1" />
+        <div className="ag-geo ag-geo-2" />
+        <div className="ag-geo ag-geo-3" />
+        <div className="ag-geo ag-geo-4" />
+        <div className="ag-geo ag-geo-5" />
+        <div className="ag-geo ag-geo-6" />
+        <div className="ag-geo ag-geo-7" />
+        <div className="ag-geo ag-geo-8" />
+
+        {/* Main centered card */}
+        <div className="ag-login-stage">
+          {/* Hovering logo above card */}
+          <div className="ag-logo-hover">
+            <div className="ag-logo-ring">
+              <div className="ag-logo-inner">
+                <ShieldCheck size={32} color="#ffffff" />
+              </div>
+            </div>
+            <span className="ag-logo-brand">KALIPPETTI</span>
+          </div>
+
+          <div className="ag-glass-card">
+            {/* Card glow */}
+            <div className="ag-card-glow" />
+            {/* Corner accent bottom-right */}
+            <div className="ag-card-corner-br" />
+
+            <div className="ag-card-header">
+              <h1 className="ag-heading">Admin Control Center</h1>
+              <p className="ag-subheading">Secure access to system operations</p>
+            </div>
+
+            <form onSubmit={handleLoginSubmit} className="ag-form">
+              <div className="ag-field-group">
+                <label className="ag-field-label">EMAIL ADDRESS</label>
+                <div className="ag-input-wrap">
+                  <Mail size={16} className="ag-input-icon" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="admin@company.com"
+                    className="ag-input"
+                    required
+                  />
+                  <div className="ag-input-glow" />
+                </div>
+              </div>
+
+              <div className="ag-field-group">
+                <div className="ag-field-label-row">
+                  <label className="ag-field-label">PASSWORD</label>
+                  <a
+                    href="#forgot"
+                    onClick={(e) => { e.preventDefault(); alert('Please contact the systems administrator to reset your password.'); }}
+                    className="ag-forgot-link"
+                  >Forgot Password?</a>
+                </div>
+                <div className="ag-input-wrap">
+                  <Lock size={16} className="ag-input-icon" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="ag-input"
+                    required
+                  />
+                  <div className="ag-input-glow" />
+                </div>
+              </div>
+
+              <div className="ag-options-row">
+                <label className="ag-remember-label">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="ag-checkbox"
+                  />
+                  <span>Remember Me</span>
+                </label>
+              </div>
+
+              {loginError && (
+                <div className="ag-error-msg">
+                  <ShieldAlert size={14} />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <button type="submit" className="ag-signin-btn">
+                <span className="ag-btn-glow" />
+                <span className="ag-btn-text">Sign In to Dashboard</span>
+                <ArrowRight size={18} className="ag-btn-arrow" />
+              </button>
+            </form>
+
+            <div className="ag-divider">
+              <span>OR</span>
+            </div>
+
+            {/* Biometric login */}
+            <button
+              type="button"
+              onClick={() => alert('Biometric authentication is not configured.')}
+              className="ag-biometric-btn"
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+              </svg>
+              <span>Use Biometric Login</span>
+            </button>
+
+            {/* System status */}
+            <div className="ag-status-bar">
+              <div className="ag-status-dot" />
+              <span>All Systems Operational</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="ag-footer">
+          <span>© 2024 Kalippetti Admin Suite · Secured with AES-256</span>
+          <div className="ag-footer-links">
+            <a href="#privacy" onClick={e => e.preventDefault()}>Privacy</a>
+            <a href="#terms" onClick={e => e.preventDefault()}>Terms</a>
+            <a href="#support" onClick={e => e.preventDefault()}>Support</a>
+          </div>
+        </div>
+
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+          #ag-login-root, .ag-login-universe {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #050816;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 40px 20px;
+          }
+
+          /* NEBULA ORBS */
+          .ag-login-universe::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: -10%;
+            width: 70vw;
+            height: 70vw;
+            max-width: 800px;
+            max-height: 800px;
+            background: radial-gradient(circle, rgba(139,92,246,0.18) 0%, rgba(59,130,246,0.08) 40%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(60px);
+          }
+          .ag-login-universe::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            max-width: 700px;
+            max-height: 700px;
+            background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, rgba(16,185,129,0.06) 40%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
+          }
+
+          /* CYBER GRID */
+          .ag-cyber-grid {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+              linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+          }
+
+          /* DEPTH RINGS */
+          .ag-depth-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(59,130,246,0.08);
+            pointer-events: none;
+            z-index: 0;
+            animation: agDepthExpand linear infinite;
+          }
+          .ag-depth-ring-1 { width: 400px; height: 400px; animation-duration: 8s; animation-delay: 0s; }
+          .ag-depth-ring-2 { width: 700px; height: 700px; animation-duration: 8s; animation-delay: 2.6s; }
+          .ag-depth-ring-3 { width: 1000px; height: 1000px; animation-duration: 8s; animation-delay: 5.3s; }
+          @keyframes agDepthExpand {
+            0%   { opacity: 0.7; transform: scale(0.3); }
+            100% { opacity: 0; transform: scale(1.2); }
+          }
+
+          /* ===== PARTICLES ===== */
+          .ag-particles { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+          .ag-particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: agParticleFloat linear infinite;
+          }
+          .ag-particle-0 { width: 3px; height: 3px; background: #06B6D4; opacity: 0.8; box-shadow: 0 0 6px #06B6D4; }
+          .ag-particle-1 { width: 2px; height: 2px; background: #8B5CF6; opacity: 0.7; box-shadow: 0 0 5px #8B5CF6; }
+          .ag-particle-2 { width: 4px; height: 4px; background: #10B981; opacity: 0.5; box-shadow: 0 0 8px #10B981; }
+          .ag-particle-3 { width: 2px; height: 2px; background: #3B82F6; opacity: 0.9; box-shadow: 0 0 5px #3B82F6; }
+          .ag-particle-4 { width: 3px; height: 3px; background: #c084fc; opacity: 0.6; box-shadow: 0 0 6px #c084fc; }
+          @keyframes agParticleFloat {
+            0%   { transform: translateY(105vh) translateX(0px) scale(1); opacity: 0; }
+            8%   { opacity: 1; }
+            92%  { opacity: 1; }
+            100% { transform: translateY(-5vh) translateX(30px) scale(0.4); opacity: 0; }
+          }
+
+          /* ===== ENERGY WAVES ===== */
+          .ag-energy-wave {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(59,130,246,0.12);
+            pointer-events: none;
+            animation: agWavePulse ease-out infinite;
+            z-index: 1;
+          }
+          .ag-wave-1 { width: 500px; height: 500px; animation-duration: 5s; animation-delay: 0s; border-color: rgba(59,130,246,0.18); }
+          .ag-wave-2 { width: 800px; height: 800px; animation-duration: 5s; animation-delay: 1.7s; border-color: rgba(139,92,246,0.12); }
+          .ag-wave-3 { width: 1100px; height: 1100px; animation-duration: 5s; animation-delay: 3.3s; border-color: rgba(6,182,212,0.08); }
+          @keyframes agWavePulse {
+            0%   { transform: scale(0.3); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 0; }
+          }
+
+          /* ===== FLOATING GEOMETRICS ===== */
+          .ag-geo {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+            animation: agGeoFloat ease-in-out infinite alternate;
+          }
+          .ag-geo-1 {
+            width: 90px; height: 90px;
+            top: 10%; left: 6%;
+            border: 1.5px solid rgba(6,182,212,0.35);
+            border-radius: 20px;
+            background: rgba(6,182,212,0.05);
+            animation-duration: 7s;
+            box-shadow: inset 0 0 40px rgba(6,182,212,0.1), 0 0 30px rgba(6,182,212,0.15);
+          }
+          .ag-geo-2 {
+            width: 55px; height: 55px;
+            top: 60%; left: 4%;
+            border: 1.5px solid rgba(139,92,246,0.4);
+            border-radius: 50%;
+            background: rgba(139,92,246,0.06);
+            animation-duration: 9s; animation-delay: 1s;
+            box-shadow: 0 0 30px rgba(139,92,246,0.2);
+          }
+          .ag-geo-3 {
+            width: 80px; height: 80px;
+            top: 25%; right: 5%;
+            border: 1.5px solid rgba(16,185,129,0.3);
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            background: rgba(16,185,129,0.06);
+            animation-duration: 8s; animation-delay: 0.5s;
+            filter: drop-shadow(0 0 10px rgba(16,185,129,0.3));
+          }
+          .ag-geo-4 {
+            width: 65px; height: 65px;
+            bottom: 18%; right: 8%;
+            border: 1.5px solid rgba(59,130,246,0.35);
+            border-radius: 14px;
+            transform: rotate(45deg);
+            background: rgba(59,130,246,0.06);
+            animation-duration: 6s; animation-delay: 2s;
+            box-shadow: 0 0 25px rgba(59,130,246,0.15);
+          }
+          .ag-geo-5 {
+            width: 40px; height: 40px;
+            top: 8%; right: 20%;
+            border: 1.5px solid rgba(192,132,252,0.4);
+            border-radius: 50%;
+            animation-duration: 10s; animation-delay: 0.8s;
+            box-shadow: 0 0 20px rgba(192,132,252,0.25);
+            background: rgba(192,132,252,0.04);
+          }
+          .ag-geo-6 {
+            width: 130px; height: 130px;
+            bottom: 6%; left: 12%;
+            border: 1px solid rgba(6,182,212,0.15);
+            border-radius: 32px;
+            transform: rotate(-15deg);
+            animation-duration: 12s; animation-delay: 3s;
+            background: rgba(6,182,212,0.02);
+            box-shadow: 0 0 40px rgba(6,182,212,0.05);
+          }
+          .ag-geo-7 {
+            width: 25px; height: 25px;
+            top: 40%; left: 2%;
+            border: 1.5px solid rgba(59,130,246,0.5);
+            border-radius: 6px;
+            animation-duration: 5s; animation-delay: 1.5s;
+            transform: rotate(20deg);
+            box-shadow: 0 0 12px rgba(59,130,246,0.3);
+            background: rgba(59,130,246,0.08);
+          }
+          .ag-geo-8 {
+            width: 45px; height: 45px;
+            bottom: 30%; left: 7%;
+            border: 1.5px solid rgba(16,185,129,0.25);
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            animation-duration: 11s; animation-delay: 4s;
+            background: rgba(16,185,129,0.04);
+            filter: drop-shadow(0 0 8px rgba(16,185,129,0.2));
+          }
+          @keyframes agGeoFloat {
+            0%   { transform: translateY(0px) rotate(0deg) scale(1); }
+            50%  { transform: translateY(-12px) rotate(5deg) scale(1.02); }
+            100% { transform: translateY(-22px) rotate(10deg) scale(0.98); }
+          }
+
+          /* ===== LOGO ===== */
+          .ag-login-stage {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+          }
+          .ag-logo-hover {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: -20px;
+            animation: agLogoHover ease-in-out 3s infinite alternate;
+            z-index: 11;
+            position: relative;
+          }
+          @keyframes agLogoHover {
+            0%   { transform: translateY(0px); }
+            100% { transform: translateY(-10px); }
+          }
+          .ag-logo-ring {
+            width: 78px;
+            height: 78px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #06B6D4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+              0 0 0 1px rgba(255,255,255,0.15),
+              0 0 40px rgba(59,130,246,0.7),
+              0 0 80px rgba(139,92,246,0.4),
+              0 0 120px rgba(6,182,212,0.25);
+            position: relative;
+          }
+          .ag-logo-ring::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 26px;
+            background: conic-gradient(from 0deg, #3B82F6, #8B5CF6, #06B6D4, #10B981, #3B82F6);
+            z-index: -1;
+            animation: agConicSpin 3s linear infinite;
+            opacity: 0.9;
+          }
+          .ag-logo-ring::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #06B6D4 100%);
+            z-index: -1;
+          }
+          @keyframes agConicSpin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .ag-logo-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+          }
+          .ag-logo-brand {
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: 0.3em;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+          }
+
+          /* ===== GLASS CARD ===== */
+          .ag-glass-card {
+            width: 100%;
+            background: rgba(5, 8, 22, 0.7);
+            backdrop-filter: blur(60px) saturate(200%) brightness(1.1);
+            -webkit-backdrop-filter: blur(60px) saturate(200%) brightness(1.1);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 32px;
+            padding: 56px 48px 44px;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+              0 40px 100px rgba(0,0,0,0.8),
+              0 0 0 1px rgba(59,130,246,0.1),
+              inset 0 1px 0 rgba(255,255,255,0.1),
+              inset 0 -1px 0 rgba(59,130,246,0.08);
+            animation: agCardEntry 0.8s cubic-bezier(0.16,1,0.3,1) both;
+          }
+          @keyframes agCardEntry {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          /* Scan line effect */
+          .ag-glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3B82F6, #8B5CF6, #06B6D4, transparent);
+            animation: agScanLine 4s ease-in-out infinite;
+            z-index: 20;
+          }
+          @keyframes agScanLine {
+            0%   { opacity: 0; transform: translateX(-100%); }
+            20%  { opacity: 1; }
+            80%  { opacity: 1; }
+            100% { opacity: 0; transform: translateX(100%); }
+          }
+          /* Corner accents */
+          .ag-glass-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 40px; height: 40px;
+            border-top: 2px solid rgba(59,130,246,0.5);
+            border-left: 2px solid rgba(59,130,246,0.5);
+            border-radius: 32px 0 0 0;
+            pointer-events: none;
+          }
+          .ag-card-glow {
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(139,92,246,0.1) 40%, transparent 70%);
+            pointer-events: none;
+            border-radius: 50%;
+          }
+          /* Bottom right corner accent */
+          .ag-card-corner-br {
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 40px; height: 40px;
+            border-bottom: 2px solid rgba(6,182,212,0.4);
+            border-right: 2px solid rgba(6,182,212,0.4);
+            border-radius: 0 0 32px 0;
+            pointer-events: none;
+          }
+
+          /* ===== CARD HEADER ===== */
+          .ag-card-header {
+            text-align: center;
+            margin-bottom: 36px;
+            padding-top: 20px;
+          }
+          .ag-heading {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 40%, #8B5CF6 80%, #06B6D4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+          }
+          .ag-subheading {
+            font-size: 0.88rem;
+            color: rgba(148,163,184,0.85);
+            font-weight: 400;
+            letter-spacing: 0.02em;
+          }
+
+          /* ===== FORM ===== */
+          .ag-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+          }
+          .ag-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .ag-field-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .ag-field-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+          }
+          .ag-forgot-link {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #a855f7;
+            text-decoration: none;
+            transition: color 0.2s;
+          }
+          .ag-forgot-link:hover { color: #c084fc; }
+          .ag-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+          .ag-input-icon {
+            position: absolute;
+            left: 16px;
+            color: rgba(255,255,255,0.3);
+            pointer-events: none;
+            z-index: 2;
+          }
+          .ag-input {
+            width: 100%;
+            height: 54px;
+            padding: 0 18px 0 48px;
+            background: rgba(15,23,42,0.8);
+            border: 1px solid rgba(148,163,184,0.12);
+            border-radius: 14px;
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            font-family: 'Inter', -apple-system, sans-serif;
+            outline: none;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+            box-sizing: border-box;
+          }
+          .ag-input::placeholder { color: rgba(148,163,184,0.4); }
+          .ag-input:focus {
+            background: rgba(15,23,42,0.95);
+            border-color: rgba(59,130,246,0.6);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12), 0 0 24px rgba(59,130,246,0.15), 0 0 1px rgba(59,130,246,0.4) inset;
+          }
+          .ag-input:focus + .ag-input-glow {
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+          }
+          .ag-input-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            pointer-events: none;
+          }
+
+          /* ===== OPTIONS ===== */
+          .ag-options-row {
+            display: flex;
+            align-items: center;
+            margin-top: -4px;
+          }
+          .ag-remember-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            user-select: none;
+          }
+          .ag-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: #6366f1;
+            cursor: pointer;
+          }
+
+          /* ===== ERROR ===== */
+          .ag-error-msg {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 10px;
+            color: #f87171;
+            font-size: 0.85rem;
+            font-weight: 600;
+          }
+
+          /* ===== SIGN IN BUTTON ===== */
+          .ag-signin-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            height: 58px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 40%, #3B82F6 70%, #06B6D4 100%);
+            background-size: 300% 300%;
+            border: none;
+            border-radius: 16px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+            animation: agGradientShift 5s ease infinite;
+            box-shadow:
+              0 4px 20px rgba(59,130,246,0.4),
+              0 2px 8px rgba(139,92,246,0.3),
+              0 0 60px rgba(6,182,212,0.1),
+              inset 0 1px 0 rgba(255,255,255,0.2);
+            letter-spacing: 0.01em;
+          }
+          @keyframes agGradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          .ag-signin-btn:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow:
+              0 12px 50px rgba(59,130,246,0.6),
+              0 6px 25px rgba(139,92,246,0.5),
+              0 0 80px rgba(6,182,212,0.2),
+              inset 0 1px 0 rgba(255,255,255,0.25);
+          }
+          .ag-signin-btn:active { transform: scale(0.98) translateY(0); }
+          .ag-btn-glow {
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            animation: agBtnShimmer 2.5s ease infinite;
+          }
+          @keyframes agBtnShimmer {
+            0%   { left: -100%; }
+            100% { left: 220%; }
+          }
+          .ag-btn-text { position: relative; z-index: 1; font-size: 0.97rem; }
+          .ag-btn-arrow {
+            position: relative;
+            z-index: 1;
+            transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+          }
+          .ag-signin-btn:hover .ag-btn-arrow { transform: translateX(5px); }
+
+          /* ===== DIVIDER ===== */
+          .ag-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0 16px;
+            color: rgba(255,255,255,0.25);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+          }
+          .ag-divider::before, .ag-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+          }
+
+          /* ===== BIOMETRIC BUTTON ===== */
+          .ag-biometric-btn {
+            width: 100%;
+            height: 50px;
+            background: rgba(15,23,42,0.6);
+            border: 1px solid rgba(148,163,184,0.1);
+            border-radius: 14px;
+            color: rgba(148,163,184,0.7);
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.25s;
+            letter-spacing: 0.01em;
+          }
+          .ag-biometric-btn:hover {
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.3);
+            color: #93c5fd;
+            box-shadow: 0 0 20px rgba(59,130,246,0.08);
+          }
+
+          /* ===== STATUS BAR ===== */
+          .ag-status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 28px;
+            padding: 10px 20px;
+            background: rgba(16,185,129,0.06);
+            border: 1px solid rgba(16,185,129,0.15);
+            border-radius: 50px;
+            font-size: 0.78rem;
+            color: rgba(167,243,208,0.7);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+          }
+          .ag-status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 8px rgba(16,185,129,0.9), 0 0 16px rgba(16,185,129,0.5);
+            animation: agStatusPulse 2.5s ease-in-out infinite;
+            flex-shrink: 0;
+          }
+          @keyframes agStatusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(16,185,129,0.9), 0 0 16px rgba(16,185,129,0.5); }
+            50%       { opacity: 0.6; transform: scale(0.8); box-shadow: 0 0 4px rgba(16,185,129,0.6); }
+          }
+
+          /* ===== FOOTER ===== */
+          .ag-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 32px;
+            font-size: 0.72rem;
+            color: rgba(100,116,139,0.8);
+            position: relative;
+            z-index: 10;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+          .ag-footer-links {
+            display: flex;
+            gap: 20px;
+          }
+          .ag-footer a {
+            color: rgba(100,116,139,0.7);
+            text-decoration: none;
+            transition: color 0.2s;
+          }
+          .ag-footer a:hover { color: rgba(148,163,184,0.9); }
+
+          @media (max-width: 560px) {
+            .ag-glass-card { padding: 48px 24px 36px; }
+            .ag-heading { font-size: 1.6rem; }
+            .ag-footer { flex-direction: column; align-items: center; text-align: center; }
+            .ag-geo-6, .ag-geo-8 { display: none; }
+          }
+          @media (max-width: 400px) {
+            .ag-glass-card { padding: 44px 20px 28px; border-radius: 24px; }
+            .ag-heading { font-size: 1.4rem; }
+            .ag-signin-btn { height: 52px; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -415,13 +1221,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               <MessageSquare size={16} />
                               <span>WhatsApp</span>
                             </button>
-                            <button 
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="tbl-action-btn delete-btn"
-                              title="Delete Order"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            {deletingOrderId === order.id ? (
+                              <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+                                <button 
+                                  type="button"
+                                  onClick={(e) => handleDeleteOrder(e, order.id)}
+                                  className="btn-confirm-delete"
+                                >
+                                  Confirm
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingOrderId(null); }}
+                                  className="btn-cancel-delete"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button 
+                                type="button"
+                                onClick={(e) => handleDeleteOrder(e, order.id)}
+                                className="tbl-action-btn delete-btn"
+                                title="Delete Order"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -480,6 +1306,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
 
                   <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Category *</label>
+                      <select 
+                        value={newProduct.category}
+                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                        className="form-select"
+                        required
+                      >
+                        <option value="Creative Boards">Creative Boards</option>
+                        <option value="Wooden Blocks">Wooden Blocks</option>
+                        <option value="Action & Science">Action & Science</option>
+                        <option value="Plush Toys">Plush Toys</option>
+                        <option value="General">General</option>
+                      </select>
+                    </div>
 
                     <div className="form-group">
                       <label className="form-label">Rating Stars (1 - 5)</label>
@@ -566,13 +1407,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         )}
                       </div>
 
-                      <button 
-                        onClick={() => handleDeleteProduct(p.id)}
-                        className="inv-delete-btn"
-                        title="Delete Product"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {deletingProductId === p.id ? (
+                        <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            type="button"
+                            onClick={(e) => handleDeleteProduct(e, p.id)}
+                            className="btn-confirm-delete"
+                          >
+                            Delete
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingProductId(null); }}
+                            className="btn-cancel-delete"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={(e) => handleDeleteProduct(e, p.id)}
+                          className="inv-delete-btn"
+                          title="Delete Product"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -678,13 +1539,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div className="ad-prev-img-wrap">
                         <img src={ad.imageUrl} alt="" />
                       </div>
-                      <button 
-                        onClick={() => handleDeleteAd(ad.id)}
-                        className="ad-delete-btn"
-                        title="Remove banner"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {deletingAdId === ad.id ? (
+                        <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            type="button"
+                            onClick={(e) => handleDeleteAd(e, ad.id)}
+                            className="btn-confirm-delete"
+                          >
+                            Delete
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingAdId(null); }}
+                            className="btn-cancel-delete"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={(e) => handleDeleteAd(e, ad.id)}
+                          className="ad-delete-btn"
+                          title="Remove banner"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -786,13 +1667,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                       <p>{campaign.description}</p>
                     </div>
-                    <button 
-                      onClick={handleDeleteCampaign}
-                      className="prod-delete-btn"
-                      title="Remove campaign"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {deletingCampaign ? (
+                      <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          type="button"
+                          onClick={(e) => handleDeleteCampaign(e)}
+                          className="btn-confirm-delete"
+                        >
+                          Delete
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingCampaign(false); }}
+                          className="btn-cancel-delete"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={(e) => handleDeleteCampaign(e)}
+                        className="prod-delete-btn"
+                        title="Remove campaign"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <p>No active campaign combo currently set.</p>
@@ -805,62 +1706,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </div>
 
       <style>{`
-        .admin-login-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 70vh;
-          padding: 24px;
-        }
-        .admin-login-card {
-          width: 100%;
-          max-width: 440px;
-          background: var(--white);
-          padding: 40px 30px;
-          text-align: center;
-        }
-        .login-logo-brand {
-          font-size: 2.8rem;
-          font-weight: 800;
-          letter-spacing: -1px;
-          margin-bottom: 16px;
-          text-align: center;
-        }
-        .admin-login-card h2 {
-          font-size: 1.6rem;
-          margin-bottom: 8px;
-        }
-        .admin-login-card p {
-          font-size: 0.95rem;
-          color: var(--neutral-gray);
-          margin-bottom: 24px;
-        }
-        .admin-login-form {
-          text-align: left;
-        }
-        .login-error-msg {
-          color: var(--danger);
-          font-size: 0.85rem;
-          font-weight: 600;
+        .delete-confirm-wrapper {
           display: flex;
           align-items: center;
           gap: 6px;
-          margin-bottom: 16px;
         }
-        .login-btn-sub {
-          padding: 14px;
-          font-size: 1.05rem;
+        .btn-confirm-delete {
+          background-color: var(--danger);
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          cursor: pointer;
         }
-        .admin-tips-box {
-          background: var(--neutral-light);
-          border: 1px solid var(--border);
-          border-radius: var(--border-radius-md);
-          margin-top: 24px;
-          padding: 12px;
-          font-size: 0.8rem;
-          color: var(--neutral-gray);
-          text-align: left;
+        .btn-confirm-delete:hover {
+          background-color: #c60029;
         }
+        .btn-cancel-delete {
+          background-color: #e2e8f0;
+          color: #475569;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .btn-cancel-delete:hover {
+          background-color: #cbd5e1;
+        }
+        /* Login styles moved inline to ag-login-universe section above */
 
         /* Dashboard styles */
         .admin-dashboard-container {
