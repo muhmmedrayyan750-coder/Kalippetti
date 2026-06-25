@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Package, ShoppingBag, Trash2, Plus, MessageSquare, ShieldAlert, LogOut, Layers, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Package, ShoppingBag, Trash2, Plus, MessageSquare, ShieldAlert, LogOut, Layers, Mail, Lock, ArrowRight, ShieldCheck, Settings } from 'lucide-react';
 import type { Product } from './ProductCard';
 import type { Advertisement } from './AdCarousel';
+import type { SiteSettings } from '../types';
 
 interface AdminPanelProps {
   isLoggedInAdmin: boolean;
@@ -15,6 +16,8 @@ interface AdminPanelProps {
   onUpdateOrders: (newOrders: any[]) => void;
   campaign: Product | null;
   onUpdateCampaign: (newCampaign: Product | null) => void;
+  siteSettings: SiteSettings;
+  onUpdateSiteSettings: (newSettings: SiteSettings) => void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -29,6 +32,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateOrders,
   campaign,
   onUpdateCampaign,
+  siteSettings,
+  onUpdateSiteSettings,
 }) => {
   // Login credentials state
   const [username, setUsername] = useState('');
@@ -40,8 +45,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [deletingCampaign, setDeletingCampaign] = useState(false);
 
-  // Active Tab: 'orders' | 'products' | 'ads' | 'campaign'
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'ads' | 'campaign'>('orders');
+  // Active Tab: 'orders' | 'products' | 'ads' | 'campaign' | 'settings'
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'ads' | 'campaign' | 'settings'>('orders');
+
+  // Settings form state
+  const [settingsForm, setSettingsForm] = useState<SiteSettings>(siteSettings);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settingsForm.siteName.trim() || !settingsForm.logoPart1.trim()) {
+      alert('Site Name and Logo Part 1 are required.');
+      return;
+    }
+    onUpdateSiteSettings(settingsForm);
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 3000);
+  };
 
   // Form states - Products
   const [newProduct, setNewProduct] = useState({
@@ -68,7 +88,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     e.preventDefault();
     const cleanUsername = username.trim().toLowerCase();
     if (
-      (cleanUsername === 'admin' || cleanUsername === 'admin@adminsecure.com' || cleanUsername === 'admin@company.com') && 
+      (cleanUsername === 'admin' || cleanUsername === 'admin@adminsecure.com' || cleanUsername === 'admin@company.com') &&
       password === 'kalippetti@123'
     ) {
       onLoginSuccess();
@@ -101,7 +121,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     const updated = [...products, createdProduct];
     onUpdateProducts(updated);
-    
+
     // Reset form
     setNewProduct({
       title: '',
@@ -234,17 +254,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleContactCustomer = (order: any) => {
     const customerPhone = order.phone.trim();
     // Indian standard prefix is 91. Make sure it has 91.
-    const cleanPhone = customerPhone.startsWith('91') || customerPhone.startsWith('+91') 
-      ? customerPhone.replace('+', '') 
+    const cleanPhone = customerPhone.startsWith('91') || customerPhone.startsWith('+91')
+      ? customerPhone.replace('+', '')
       : `91${customerPhone}`;
 
     const adminMessage = `Hello ${order.customerName},\n` +
-      `This is *Kalippetti Toys Admin*.\n` +
+      `This is *${siteSettings.siteName} Admin*.\n` +
       `We are writing to update you on your *Order ID: ${order.id}*.\n` +
       `Your current order status is: *${order.status}*.\n\n` +
       `Items ordered:\n` +
       `${order.items.map((i: any) => `- ${i.quantity}x ${i.title}`).join('\n')}\n\n` +
-      `We are processing it. Thank you for shopping with Kalippetti! 🧸`;
+      `We are processing it. Thank you for shopping with ${siteSettings.siteName}! 🧸`;
 
     const encodedText = encodeURIComponent(adminMessage);
     window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, '_blank');
@@ -261,7 +281,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <div className="ag-login-universe" id="ag-login-root">
         {/* Animated particle field */}
         <div className="ag-particles">
-          {Array.from({length: 28}).map((_, i) => (
+          {Array.from({ length: 28 }).map((_, i) => (
             <div key={i} className={`ag-particle ag-particle-${i % 5}`} style={{
               left: `${(i * 13 + 3) % 100}%`,
               animationDelay: `${(i * 0.35) % 6}s`,
@@ -393,7 +413,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               className="ag-biometric-btn"
             >
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
               </svg>
               <span>Use Biometric Login</span>
             </button>
@@ -408,7 +428,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         {/* Footer */}
         <div className="ag-footer">
-          <span>© 2024 Kalippetti Admin Suite · Secured with AES-256</span>
+          <span>© 2024 {siteSettings.siteName} Admin Suite · Secured with AES-256</span>
           <div className="ag-footer-links">
             <a href="#privacy" onClick={e => e.preventDefault()}>Privacy</a>
             <a href="#terms" onClick={e => e.preventDefault()}>Terms</a>
@@ -1082,7 +1102,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <div className="dashboard-header-row">
         <div>
           <h1>Admin Dashboard</h1>
-          <p>Manage Kalippetti toy store inventory, active advertisements, and user orders.</p>
+          <p>Manage {siteSettings.siteName} store inventory, active advertisements, and user orders.</p>
         </div>
         <button onClick={onLogout} className="btn btn-light logout-btn">
           <LogOut size={16} />
@@ -1112,23 +1132,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Navigation Tabs */}
       <div className="dashboard-tabs">
-        <button 
+        <button
           onClick={() => setActiveTab('orders')}
           className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
         >
           <ShoppingBag size={18} />
           <span>Customer Orders ({orders.length})</span>
         </button>
-        
-        <button 
+
+        <button
           onClick={() => setActiveTab('products')}
           className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`}
         >
           <Package size={18} />
           <span>Toys Inventory ({products.length})</span>
         </button>
-        
-        <button 
+
+        <button
           onClick={() => setActiveTab('ads')}
           className={`tab-btn ${activeTab === 'ads' ? 'active' : ''}`}
         >
@@ -1136,18 +1156,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <span>Advertisement Slider ({ads.length})</span>
         </button>
 
-        <button 
+        <button
           onClick={() => setActiveTab('campaign')}
           className={`tab-btn ${activeTab === 'campaign' ? 'active' : ''}`}
         >
           <Package size={18} />
           <span>Campaign Combo</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+        >
+          <Settings size={18} />
+          <span>Site Settings</span>
+        </button>
       </div>
 
       {/* Tab Contents */}
       <div className="dashboard-content">
-        
+
         {/* TAB 1: ORDERS */}
         {activeTab === 'orders' && (
           <div className="tab-panel animate-slide-in">
@@ -1199,8 +1227,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <div className="tbl-shipping-note">{order.shippingCharge === 0 ? 'FREE Shipping' : `+ Rs. ${order.shippingCharge} Shipping`}</div>
                         </td>
                         <td>
-                          <select 
-                            value={order.status} 
+                          <select
+                            value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
                             className="form-select tbl-status-select"
                           >
@@ -1213,7 +1241,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </td>
                         <td>
                           <div className="tbl-actions">
-                            <button 
+                            <button
                               onClick={() => handleContactCustomer(order)}
                               className="tbl-action-btn contact-btn"
                               title="Chat on WhatsApp"
@@ -1223,14 +1251,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             </button>
                             {deletingOrderId === order.id ? (
                               <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
-                                <button 
+                                <button
                                   type="button"
                                   onClick={(e) => handleDeleteOrder(e, order.id)}
                                   className="btn-confirm-delete"
                                 >
                                   Confirm
                                 </button>
-                                <button 
+                                <button
                                   type="button"
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingOrderId(null); }}
                                   className="btn-cancel-delete"
@@ -1239,7 +1267,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 </button>
                               </div>
                             ) : (
-                              <button 
+                              <button
                                 type="button"
                                 onClick={(e) => handleDeleteOrder(e, order.id)}
                                 className="tbl-action-btn delete-btn"
@@ -1263,18 +1291,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {activeTab === 'products' && (
           <div className="tab-panel animate-slide-in">
             <div className="inventory-grid">
-              
+
               {/* Product Form */}
               <div className="inventory-form-card wavy-card">
                 <h3>Add New Toy</h3>
                 <form onSubmit={handleAddProduct} className="inventory-form">
                   <div className="form-group">
                     <label className="form-label">Toy Title *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="E.g. Magnetic Drawing Board"
                       value={newProduct.title}
-                      onChange={(e) => setNewProduct({...newProduct, title: e.target.value})}
+                      onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1283,23 +1311,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="form-grid-2">
                     <div className="form-group">
                       <label className="form-label">Price (Rs.) *</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         placeholder="E.g. 499"
                         value={newProduct.price}
-                        onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                         className="form-input"
                         required
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label className="form-label">Original Price (Rs. - Optional)</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         placeholder="E.g. 750 (For discount)"
                         value={newProduct.originalPrice}
-                        onChange={(e) => setNewProduct({...newProduct, originalPrice: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, originalPrice: e.target.value })}
                         className="form-input"
                       />
                     </div>
@@ -1308,9 +1336,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="form-grid-2">
                     <div className="form-group">
                       <label className="form-label">Category *</label>
-                      <select 
+                      <select
                         value={newProduct.category}
-                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                         className="form-select"
                         required
                       >
@@ -1324,9 +1352,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     <div className="form-group">
                       <label className="form-label">Rating Stars (1 - 5)</label>
-                      <select 
+                      <select
                         value={newProduct.rating}
-                        onChange={(e) => setNewProduct({...newProduct, rating: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, rating: e.target.value })}
                         className="form-select"
                       >
                         <option value="5">5 Stars</option>
@@ -1339,11 +1367,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="form-group">
                     <label className="form-label">Image URL *</label>
-                    <input 
-                      type="url" 
+                    <input
+                      type="url"
                       placeholder="Paste online image URL (Unsplash, etc.)"
                       value={newProduct.imageUrl}
-                      onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})}
+                      onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1352,20 +1380,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="form-group">
                     <label className="form-label">Description</label>
-                    <textarea 
+                    <textarea
                       placeholder="Tell customers about the materials, age range, fun factor..."
                       value={newProduct.description}
-                      onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                       className="form-textarea"
                     />
                   </div>
 
                   <div className="form-checkbox-row">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       id="inStockCheck"
                       checked={newProduct.inStock}
-                      onChange={(e) => setNewProduct({...newProduct, inStock: e.target.checked})}
+                      onChange={(e) => setNewProduct({ ...newProduct, inStock: e.target.checked })}
                       className="checkbox-input"
                     />
                     <label htmlFor="inStockCheck">Product in Stock (In Stock)</label>
@@ -1382,14 +1410,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="inventory-list-card wavy-card">
                 <h3>Current Inventory</h3>
                 <p className="panel-desc">Review your current listings. Click delete to remove a toy instantly.</p>
-                
+
                 <div className="inventory-items-container">
                   {products.map((p) => (
                     <div key={p.id} className="inventory-item-row">
                       <div className="inv-img-wrapper">
                         <img src={p.imageUrl} alt={p.title} />
                       </div>
-                      
+
                       <div className="inv-details">
                         <h4>{p.title}</h4>
                         <span className="inv-tag">{p.category}</span>
@@ -1398,7 +1426,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           {p.originalPrice && <span className="inv-orig-price">Rs. {p.originalPrice}</span>}
                         </div>
                       </div>
-                      
+
                       <div className="inv-stock-status">
                         {p.inStock ? (
                           <span className="badge badge-success">In Stock</span>
@@ -1409,14 +1437,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       {deletingProductId === p.id ? (
                         <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
-                          <button 
+                          <button
                             type="button"
                             onClick={(e) => handleDeleteProduct(e, p.id)}
                             className="btn-confirm-delete"
                           >
                             Delete
                           </button>
-                          <button 
+                          <button
                             type="button"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingProductId(null); }}
                             className="btn-cancel-delete"
@@ -1425,7 +1453,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => handleDeleteProduct(e, p.id)}
                           className="inv-delete-btn"
@@ -1447,18 +1475,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {activeTab === 'ads' && (
           <div className="tab-panel animate-slide-in">
             <div className="inventory-grid">
-              
+
               {/* Ad Form */}
               <div className="inventory-form-card wavy-card">
                 <h3>Add Promo Banner</h3>
                 <form onSubmit={handleAddAd} className="inventory-form">
                   <div className="form-group">
                     <label className="form-label">Banner Header / Title *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="E.g. Summer Toy Sale!"
                       value={newAd.title}
-                      onChange={(e) => setNewAd({...newAd, title: e.target.value})}
+                      onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1466,11 +1494,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="form-group">
                     <label className="form-label">Subtitle Description *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="E.g. Flat 30% OFF on educational kits."
                       value={newAd.subtitle}
-                      onChange={(e) => setNewAd({...newAd, subtitle: e.target.value})}
+                      onChange={(e) => setNewAd({ ...newAd, subtitle: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1478,11 +1506,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="form-group">
                     <label className="form-label">Banner Product Image URL *</label>
-                    <input 
-                      type="url" 
+                    <input
+                      type="url"
                       placeholder="Paste transparent toy PNG or stock image URL"
                       value={newAd.imageUrl}
-                      onChange={(e) => setNewAd({...newAd, imageUrl: e.target.value})}
+                      onChange={(e) => setNewAd({ ...newAd, imageUrl: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1491,20 +1519,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="form-grid-2">
                     <div className="form-group">
                       <label className="form-label">Banner Background Color</label>
-                      <input 
-                        type="color" 
+                      <input
+                        type="color"
                         value={newAd.bgColor}
-                        onChange={(e) => setNewAd({...newAd, bgColor: e.target.value})}
+                        onChange={(e) => setNewAd({ ...newAd, bgColor: e.target.value })}
                         className="form-input color-picker-input"
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label className="form-label">CTA Button Label</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={newAd.ctaText}
-                        onChange={(e) => setNewAd({...newAd, ctaText: e.target.value})}
+                        onChange={(e) => setNewAd({ ...newAd, ctaText: e.target.value })}
                         className="form-input"
                       />
                     </div>
@@ -1521,11 +1549,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="inventory-list-card wavy-card">
                 <h3>Active Slideshow Banners</h3>
                 <p className="panel-desc">All sliders currently showing on the customer home page header.</p>
-                
+
                 <div className="ad-banners-container">
                   {ads.map((ad) => (
-                    <div 
-                      key={ad.id} 
+                    <div
+                      key={ad.id}
                       className="admin-ad-preview-card"
                       style={{ borderLeft: `10px solid ${ad.bgColor}` }}
                     >
@@ -1541,14 +1569,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                       {deletingAdId === ad.id ? (
                         <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
-                          <button 
+                          <button
                             type="button"
                             onClick={(e) => handleDeleteAd(e, ad.id)}
                             className="btn-confirm-delete"
                           >
                             Delete
                           </button>
-                          <button 
+                          <button
                             type="button"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingAdId(null); }}
                             className="btn-cancel-delete"
@@ -1557,7 +1585,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => handleDeleteAd(e, ad.id)}
                           className="ad-delete-btn"
@@ -1588,43 +1616,43 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="form-grid-2">
                     <div className="form-group">
                       <label className="form-label">Combo Title</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={newProduct.title}
-                        onChange={(e) => setNewProduct({...newProduct, title: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
                         className="form-input"
                         placeholder="KidzAge Combo..."
                         required
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label className="form-label">Sale Price (Rs.)</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         value={newProduct.price}
-                        onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                         className="form-input"
                         required
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label className="form-label">Original Price (Rs.) (Optional)</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         value={newProduct.originalPrice}
-                        onChange={(e) => setNewProduct({...newProduct, originalPrice: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, originalPrice: e.target.value })}
                         className="form-input"
                       />
                     </div>
-                    
+
                     <div className="form-group">
                       <label className="form-label">Image URL</label>
-                      <input 
-                        type="url" 
+                      <input
+                        type="url"
                         value={newProduct.imageUrl}
-                        onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})}
+                        onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
                         className="form-input"
                         placeholder="https://..."
                         required
@@ -1634,9 +1662,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="form-group">
                     <label className="form-label">Combo Description</label>
-                    <textarea 
+                    <textarea
                       value={newProduct.description}
-                      onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                       className="form-input"
                       rows={3}
                       required
@@ -1669,14 +1697,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </div>
                     {deletingCampaign ? (
                       <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => handleDeleteCampaign(e)}
                           className="btn-confirm-delete"
                         >
                           Delete
                         </button>
-                        <button 
+                        <button
                           type="button"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingCampaign(false); }}
                           className="btn-cancel-delete"
@@ -1685,7 +1713,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <button 
+                      <button
                         type="button"
                         onClick={(e) => handleDeleteCampaign(e)}
                         className="prod-delete-btn"
@@ -1698,6 +1726,94 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 ) : (
                   <p>No active campaign combo currently set.</p>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: SETTINGS */}
+        {activeTab === 'settings' && (
+          <div className="tab-panel animate-slide-in">
+            <h3 className="panel-title">Site Settings</h3>
+            <p className="panel-desc">Update global site variables like brand name, contact, and welcome text.</p>
+
+            <div className="admin-grid-layout" style={{ display: 'block', maxWidth: '600px' }}>
+              <div className="form-card wavy-card">
+                <form onSubmit={handleSaveSettings} className="admin-form">
+                  <div className="form-group">
+                    <label>Site Name (Used in Titles & Tags)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={settingsForm.siteName}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, siteName: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group d-flex gap-16">
+                    <div style={{ flex: 1 }}>
+                      <label>Logo Text Part 1 (Purple)</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={settingsForm.logoPart1}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, logoPart1: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Logo Text Part 2 (Orange)</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={settingsForm.logoPart2}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, logoPart2: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group d-flex gap-16">
+                    <div style={{ flex: 1 }}>
+                      <label>WhatsApp Contact Number</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={settingsForm.contactNumber}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, contactNumber: e.target.value })}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Official Email</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        value={settingsForm.officialEmail}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, officialEmail: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Welcome Message (Homepage Banner Text)</label>
+                    <textarea
+                      className="form-input"
+                      rows={3}
+                      value={settingsForm.welcomeMessage}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, welcomeMessage: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+                    <button type="submit" className="btn btn-secondary submit-prod-btn" style={{ margin: 0 }}>
+                      <Settings size={18} />
+                      Save Settings
+                    </button>
+                    {settingsSaved && (
+                      <span className="text-green fade-in" style={{ fontWeight: 'bold' }}>✓ Saved successfully!</span>
+                    )}
+                  </div>
+                </form>
               </div>
             </div>
           </div>

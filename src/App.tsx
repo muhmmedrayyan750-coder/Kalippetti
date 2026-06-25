@@ -12,6 +12,7 @@ import OrderTracker from './components/OrderTracker';
 import AdminPanel from './components/AdminPanel';
 import CampaignProductSection from './components/CampaignProductSection';
 import { Star, ShoppingCart, X } from 'lucide-react';
+import type { SiteSettings } from './types';
 import './App.css';
 
 // Seed Data
@@ -110,6 +111,18 @@ const DEFAULT_ADS: Advertisement[] = [
   },
 ];
 
+// Site Settings Type is in ./types.ts
+export type { SiteSettings };
+
+const DEFAULT_SETTINGS: SiteSettings = {
+  siteName: 'Kalippetti',
+  logoPart1: 'Kali',
+  logoPart2: 'ppetti',
+  contactNumber: '7012780209',
+  officialEmail: 'muhmmedrayyan750@gmail.com',
+  welcomeMessage: 'Shop premium, non-toxic, educational, and creative toys for your kids.',
+};
+
 function App() {
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
@@ -117,7 +130,8 @@ function App() {
   const [campaign, setCampaign] = useState<Product | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+
   // View states
   const [activePage, setActivePage] = useState<string>('home');
   const [cartOpen, setCartOpen] = useState(false);
@@ -167,6 +181,15 @@ function App() {
       setOrders([]);
     }
 
+    // Settings Seeding
+    const savedSettings = localStorage.getItem('kalippetti_settings');
+    if (savedSettings) {
+      setSiteSettings(JSON.parse(savedSettings));
+    } else {
+      localStorage.setItem('kalippetti_settings', JSON.stringify(DEFAULT_SETTINGS));
+      setSiteSettings(DEFAULT_SETTINGS);
+    }
+
     // Cart loading
     const savedCart = localStorage.getItem('kalippetti_cart');
     if (savedCart) {
@@ -181,6 +204,11 @@ function App() {
       setTrackingIdParam(trackId);
     }
   }, []);
+
+  // Update document title and meta information when settings change
+  useEffect(() => {
+    document.title = `${siteSettings.siteName} - Premium Kids Toys Store`;
+  }, [siteSettings.siteName]);
 
   // Sync Cart to LocalStorage
   const syncCart = (updatedCart: CartItem[]) => {
@@ -210,6 +238,15 @@ function App() {
   const handleUpdateCampaign = (newCampaign: Product | null) => {
     setCampaign(newCampaign);
     localStorage.setItem('kalippetti_campaign', JSON.stringify(newCampaign));
+  };
+
+  // Update Site Settings & sync with LocalStorage
+  const handleUpdateSiteSettings = (newSettings: SiteSettings) => {
+    setSiteSettings(newSettings);
+    localStorage.setItem('kalippetti_settings', JSON.stringify(newSettings));
+
+    // Update document title if site name changed
+    document.title = `${newSettings.siteName} - Premium Kids Toys Store`;
   };
 
   // Cart operations
@@ -310,8 +347,8 @@ function App() {
 
   // Filtered and Sorted Products list
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -336,11 +373,12 @@ function App() {
         setSearchTerm={setSearchTerm}
         toggleCart={() => setCartOpen(!cartOpen)}
         isLoggedInAdmin={isLoggedInAdmin}
+        siteSettings={siteSettings}
       />
 
       {/* Main Pages Content */}
       <main className="main-content-layout">
-        
+
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
@@ -349,10 +387,10 @@ function App() {
 
             {/* Campaign Combo Section */}
             {campaign && (
-              <CampaignProductSection 
+              <CampaignProductSection
                 campaignProduct={campaign}
-                onAddToCart={(p, q) => handleAddToCart(p, q)} 
-                onBuyNow={(p, q) => handleBuyNow(p, q)} 
+                onAddToCart={(p, q) => handleAddToCart(p, q)}
+                onBuyNow={(p, q) => handleBuyNow(p, q)}
               />
             )}
 
@@ -360,8 +398,8 @@ function App() {
             <section className="featured-toys-section">
               <div className="section-title-wrapper flex-between">
                 <div>
-                  <h2>Kalippetti Featured Toys</h2>
-                  <p>Our best selling and highly loved toys for pure excitement.</p>
+                  <h2>{siteSettings.siteName} Featured Toys</h2>
+                  <p>{siteSettings.welcomeMessage}</p>
                 </div>
                 <button onClick={() => setActivePage('shop')} className="btn btn-light">
                   View All Toys
@@ -388,15 +426,15 @@ function App() {
         {/* PAGE 2: SHOP PAGE */}
         {activePage === 'shop' && (
           <div className="shop-page-layout animate-slide-in container">
-            <h1 className="shop-title">All Kalippetti Toys</h1>
+            <h1 className="shop-title">All {siteSettings.siteName} Toys</h1>
             <p className="shop-subtitle">Unbox magic! Click cards to see full product materials and age guides.</p>
 
             {/* Search/Filter Controls */}
             <div className="shop-filters-bar wavy-card">
               <div className="filters-group-sorting" style={{ marginLeft: 'auto' }}>
                 <label>Sort By:</label>
-                <select 
-                  value={sortBy} 
+                <select
+                  value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="form-select filter-sort-select"
                 >
@@ -442,6 +480,7 @@ function App() {
             cartItems={cart}
             onBack={() => setActivePage('shop')}
             onOrderPlaced={handleOrderPlaced}
+            siteSettings={siteSettings}
           />
         )}
 
@@ -464,6 +503,8 @@ function App() {
             onUpdateCampaign={handleUpdateCampaign}
             orders={orders}
             onUpdateOrders={handleUpdateOrders}
+            siteSettings={siteSettings}
+            onUpdateSiteSettings={handleUpdateSiteSettings}
           />
         )}
 
@@ -489,9 +530,9 @@ function App() {
 
             <div className="modal-content-grid">
               <div className="modal-image-wrapper">
-                <img 
-                  src={selectedProduct.imageUrl} 
-                  alt={selectedProduct.title} 
+                <img
+                  src={selectedProduct.imageUrl}
+                  alt={selectedProduct.title}
                   onError={(e) => {
                     e.currentTarget.src = 'https://images.unsplash.com/photo-1603356029285-a04a78c47985?w=500&q=80';
                   }}
@@ -506,9 +547,9 @@ function App() {
                 <div className="modal-rating">
                   <div className="stars">
                     {Array.from({ length: 5 }).map((_, idx) => (
-                      <Star 
-                        key={idx} 
-                        size={16} 
+                      <Star
+                        key={idx}
+                        size={16}
                         fill={idx < Math.round(selectedProduct.rating) ? 'var(--accent)' : 'none'}
                         color={idx < Math.round(selectedProduct.rating) ? 'var(--accent)' : '#ccc'}
                       />
@@ -561,7 +602,7 @@ function App() {
 
                 {/* Add Actions */}
                 <div className="modal-action-row">
-                  <button 
+                  <button
                     onClick={() => {
                       handleAddToCart(selectedProduct);
                       setSelectedProductId(null);
@@ -573,7 +614,7 @@ function App() {
                     <span>Add to Toy Box</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => {
                       handleBuyNow(selectedProduct);
                       setSelectedProductId(null);
@@ -608,8 +649,9 @@ function App() {
       )}
 
       {/* Footer */}
-      <Footer 
-        setActivePage={setActivePage} 
+      <Footer
+        setActivePage={setActivePage}
+        siteSettings={siteSettings}
       />
     </>
   );

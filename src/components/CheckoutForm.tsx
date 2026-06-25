@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { ShoppingBag, ArrowLeft, Send } from 'lucide-react';
 import type { CartItem } from './CartDrawer';
+import type { SiteSettings } from '../types';
 
 interface CheckoutFormProps {
   cartItems: CartItem[];
   onBack: () => void;
   onOrderPlaced: (orderId: string) => void;
+  siteSettings: SiteSettings;
 }
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   cartItems,
   onBack,
   onOrderPlaced,
+  siteSettings,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -29,7 +32,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
-  
+
   const shippingCharge = subtotal >= 499 ? 0 : 40;
   const total = subtotal + shippingCharge;
 
@@ -61,7 +64,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       tempErrors.pincode = 'Pin code must be exactly 6 digits';
     }
     if (!formData.cityState.trim()) tempErrors.cityState = 'City and State are required';
-    
+
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -118,7 +121,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       itemsText += `- *${item.quantity}x* ${item.product.title} (Rs. ${item.product.price}/each)\n`;
     });
 
-    const whatsAppMessage = `🧸 *NEW ORDER: Kalippetti Toys* 🧸\n` +
+    const whatsAppMessage = `🧸 *NEW ORDER: ${siteSettings.siteName}* 🧸\n` +
       `--------------------------------------\n` +
       `*Order ID:* ${orderId}\n` +
       `*Date:* ${orderDate}\n\n` +
@@ -167,15 +170,15 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         {/* Verification / Address Form */}
         <div className="checkout-form-card wavy-card">
           <h3>Delivery Details</h3>
-          
+
           <form onSubmit={handleSubmit} className="checkout-form">
             <div className="form-grid-2">
               <div className="form-group">
                 <label className="form-label">Full Name *</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={formData.name} 
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
                   placeholder="E.g. Rayyan"
                   className={`form-input ${errors.name ? 'error' : ''}`}
@@ -185,10 +188,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
               <div className="form-group">
                 <label className="form-label">Phone Number (10 digits) *</label>
-                <input 
-                  type="tel" 
-                  name="phone" 
-                  value={formData.phone} 
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleChange}
                   placeholder="Primary phone number"
                   className={`form-input ${errors.phone ? 'error' : ''}`}
@@ -200,10 +203,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <div className="form-grid-2">
               <div className="form-group">
                 <label className="form-label">Alternative Phone (Optional)</label>
-                <input 
-                  type="tel" 
-                  name="altPhone" 
-                  value={formData.altPhone} 
+                <input
+                  type="tel"
+                  name="altPhone"
+                  value={formData.altPhone}
                   onChange={handleChange}
                   placeholder="Emergency phone number"
                   className={`form-input ${errors.altPhone ? 'error' : ''}`}
@@ -213,10 +216,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
               <div className="form-group">
                 <label className="form-label">Pin Code (6 digits) *</label>
-                <input 
-                  type="text" 
-                  name="pincode" 
-                  value={formData.pincode} 
+                <input
+                  type="text"
+                  name="pincode"
+                  value={formData.pincode}
                   onChange={handleChange}
                   placeholder="E.g. 670001"
                   maxLength={6}
@@ -228,9 +231,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
             <div className="form-group">
               <label className="form-label">Full Address (House, Street name, Area) *</label>
-              <textarea 
-                name="address" 
-                value={formData.address} 
+              <textarea
+                name="address"
+                value={formData.address}
                 onChange={handleChange}
                 placeholder="Enter complete shipping address"
                 className={`form-textarea ${errors.address ? 'error' : ''}`}
@@ -241,10 +244,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <div className="form-grid-2">
               <div className="form-group">
                 <label className="form-label">Landmark (Optional)</label>
-                <input 
-                  type="text" 
-                  name="landmark" 
-                  value={formData.landmark} 
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark}
                   onChange={handleChange}
                   placeholder="E.g. Near Big School"
                   className="form-input"
@@ -253,10 +256,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
               <div className="form-group">
                 <label className="form-label">City & State *</label>
-                <input 
-                  type="text" 
-                  name="cityState" 
-                  value={formData.cityState} 
+                <input
+                  type="text"
+                  name="cityState"
+                  value={formData.cityState}
                   onChange={handleChange}
                   placeholder="E.g. Calicut, Kerala"
                   className={`form-input ${errors.cityState ? 'error' : ''}`}
@@ -265,8 +268,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-secondary w-full submit-order-btn animate-pulse-soft"
             >
               <Send size={18} />
@@ -281,7 +284,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <ShoppingBag size={20} color="var(--primary)" />
             <h3>Order Summary</h3>
           </div>
-          
+
           <div className="summary-items-list">
             {cartItems.map((item) => (
               <div key={item.product.id} className="summary-item">
@@ -299,12 +302,12 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <span>Subtotal</span>
               <span>Rs. {subtotal}</span>
             </div>
-            
+
             <div className="cost-row">
               <span>Shipping Charge</span>
               <span>{shippingCharge === 0 ? 'FREE' : `Rs. ${shippingCharge}`}</span>
             </div>
-            
+
             {shippingCharge > 0 && (
               <p className="shipping-tip">💡 Add toys worth Rs. {499 - subtotal} more to unlock <b>FREE SHIPPING!</b></p>
             )}

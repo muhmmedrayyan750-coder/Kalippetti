@@ -10,6 +10,10 @@ interface HeaderProps {
   setSearchTerm: (term: string) => void;
   toggleCart: () => void;
   isLoggedInAdmin: boolean;
+  siteSettings: {
+    logoPart1: string;
+    logoPart2: string;
+  };
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   setSearchTerm,
   toggleCart,
   isLoggedInAdmin,
+  siteSettings,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showSearchInput, setShowSearchInput] = useState(false);
@@ -40,8 +45,8 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="site-header">
       <div className="header-container">
         {/* Mobile menu toggle */}
-        <button 
-          className="mobile-toggle" 
+        <button
+          className="mobile-toggle"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle Navigation Menu"
         >
@@ -50,31 +55,35 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Logo */}
         <div className="header-logo" onClick={() => handleNavClick('home')} style={{ cursor: 'pointer' }}>
-          <Logo size="md" />
+          <Logo
+            size="md"
+            text1={siteSettings.logoPart1}
+            text2={siteSettings.logoPart2}
+          />
         </div>
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
-          <button 
+          <button
             className={`nav-link ${activePage === 'home' ? 'active' : ''}`}
             onClick={() => handleNavClick('home')}
           >
             Home
           </button>
-          <button 
+          <button
             className={`nav-link ${activePage === 'shop' ? 'active' : ''}`}
             onClick={() => handleNavClick('shop')}
           >
             Toys Shop
           </button>
-          <button 
+          <button
             className={`nav-link ${activePage === 'track' ? 'active' : ''}`}
             onClick={() => handleNavClick('track')}
           >
             Track Order
           </button>
           {isLoggedInAdmin && (
-            <button 
+            <button
               className={`nav-link admin-indicator ${activePage === 'admin' ? 'active' : ''}`}
               onClick={() => handleNavClick('admin')}
             >
@@ -87,16 +96,16 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="header-actions">
           {/* Search bar */}
           <div className={`search-wrapper ${showSearchInput ? 'expanded' : ''}`}>
-            <button 
+            <button
               className="action-btn"
               onClick={() => setShowSearchInput(!showSearchInput)}
               aria-label="Search toys"
             >
               <Search size={22} />
             </button>
-            <input 
-              type="text" 
-              placeholder="Search magic toys..." 
+            <input
+              type="text"
+              placeholder="Search magic toys..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-input"
@@ -104,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Order tracking button */}
-          <button 
+          <button
             className="action-btn track-btn-header"
             onClick={() => handleNavClick('track')}
             title="Track Order"
@@ -113,8 +122,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Cart trigger */}
-          <button 
-            className="action-btn cart-trigger-btn" 
+          <button
+            className="action-btn cart-trigger-btn"
             onClick={toggleCart}
             aria-label="View shopping cart"
           >
@@ -132,26 +141,26 @@ export const Header: React.FC<HeaderProps> = ({
       {mobileMenuOpen && (
         <div className="mobile-nav-drawer animate-slide-in">
           <div className="mobile-nav-links">
-            <button 
+            <button
               className={`mobile-nav-link ${activePage === 'home' ? 'active' : ''}`}
               onClick={() => handleNavClick('home')}
             >
               Home
             </button>
-            <button 
+            <button
               className={`mobile-nav-link ${activePage === 'shop' ? 'active' : ''}`}
               onClick={() => handleNavClick('shop')}
             >
               Toys Shop
             </button>
-            <button 
+            <button
               className={`mobile-nav-link ${activePage === 'track' ? 'active' : ''}`}
               onClick={() => handleNavClick('track')}
             >
               Track Order
             </button>
             {isLoggedInAdmin && (
-              <button 
+              <button
                 className={`mobile-nav-link admin-indicator ${activePage === 'admin' ? 'active' : ''}`}
                 onClick={() => handleNavClick('admin')}
               >

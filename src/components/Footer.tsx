@@ -1,12 +1,14 @@
 import React from 'react';
 import { Phone, Mail, MapPin, Heart } from 'lucide-react';
 import Logo from './Logo';
+import type { SiteSettings } from '../types';
 
 interface FooterProps {
   setActivePage: (page: string) => void;
+  siteSettings: SiteSettings;
 }
 
-export const Footer: React.FC<FooterProps> = ({ setActivePage }) => {
+export const Footer: React.FC<FooterProps> = ({ setActivePage, siteSettings }) => {
   const handleAdminClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setActivePage('admin');
@@ -17,22 +19,22 @@ export const Footer: React.FC<FooterProps> = ({ setActivePage }) => {
       <div className="footer-container">
         {/* Brand Summary */}
         <div className="footer-brand">
-          <Logo size="sm" />
+          <Logo size="sm" text1={siteSettings.logoPart1} text2={siteSettings.logoPart2} />
           <p className="brand-pitch">
             Bringing happiness and magical learning to kids of all ages with high-quality, safe, and engaging toys.
           </p>
           <div className="footer-contact-info">
             <div className="info-item">
               <Phone size={16} />
-              <span>+91 7012780209</span>
+              <span>+91 {siteSettings.contactNumber}</span>
             </div>
             <div className="info-item">
               <Mail size={16} />
-              <span>support@kalippetti.com</span>
+              <span>{siteSettings.officialEmail}</span>
             </div>
             <div className="info-item">
               <MapPin size={16} />
-              <span>Kalippetti Toys Hub, Kerala, India</span>
+              <span>{siteSettings.siteName} Hub, Kerala, India</span>
             </div>
           </div>
         </div>
@@ -44,7 +46,7 @@ export const Footer: React.FC<FooterProps> = ({ setActivePage }) => {
             <li><button onClick={() => setActivePage('home')}>Home</button></li>
             <li><button onClick={() => { setActivePage('shop'); }}>All Toys</button></li>
             <li><button onClick={() => setActivePage('track')}>Track Order</button></li>
-            <li><a href="https://wa.me/917012780209" target="_blank" rel="noreferrer">Support Chat</a></li>
+            <li><a href={`https://wa.me/91${siteSettings.contactNumber}`} target="_blank" rel="noreferrer">Support Chat</a></li>
           </ul>
         </div>
       </div>
@@ -53,10 +55,10 @@ export const Footer: React.FC<FooterProps> = ({ setActivePage }) => {
       <div className="footer-bottom">
         <div className="bottom-container">
           <p>
-            &copy; {new Date().getFullYear()} Kalippetti. Made with <Heart size={12} fill="var(--secondary)" color="var(--secondary)" style={{ display: 'inline' }} /> for Kids.
+            &copy; {new Date().getFullYear()} {siteSettings.siteName}. Made with <Heart size={12} fill="var(--secondary)" color="var(--secondary)" style={{ display: 'inline' }} /> for Kids.
             {/* The Invisible Admin Lock */}
-            <span 
-              onClick={handleAdminClick} 
+            <span
+              onClick={handleAdminClick}
               className="invisible-admin-lock"
               style={{
                 opacity: 0.05,
