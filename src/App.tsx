@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import AdCarousel from './components/AdCarousel';
@@ -124,6 +125,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
 };
 
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
   const [ads, setAds] = useState<Advertisement[]>([]);
@@ -142,6 +146,18 @@ function App() {
 
   // Authentication State
   const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
+
+  // Is Admin Route Checker
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  // Handle activePage toggling to routes
+  useEffect(() => {
+    if (activePage === 'admin' && !isAdminRoute) {
+      navigate('/admin');
+    } else if (activePage !== 'admin' && isAdminRoute) {
+      navigate('/');
+    }
+  }, [activePage, isAdminRoute, navigate]);
 
   // Initialize and Seed LocalStorage Database
   useEffect(() => {
@@ -340,11 +356,6 @@ function App() {
     setIsLoggedInAdmin(true);
   };
 
-  const handleLogout = () => {
-    setIsLoggedInAdmin(false);
-    setActivePage('home');
-  };
-
   // Filtered and Sorted Products list
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -362,6 +373,34 @@ function App() {
   // Selected Product for details modal
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
+  // If we are on the totally separate Admin web interface route
+  if (isAdminRoute) {
+    return (
+      <div style={{ background: '#050816', minHeight: '100vh', width: '100%' }}>
+        <AdminPanel
+          isLoggedInAdmin={isLoggedInAdmin}
+          onLoginSuccess={handleLoginSuccess}
+          onLogout={() => {
+            setIsLoggedInAdmin(false);
+            setActivePage('home');
+            navigate('/');
+          }}
+          products={products}
+          onUpdateProducts={handleUpdateProducts}
+          ads={ads}
+          onUpdateAds={handleUpdateAds}
+          campaign={campaign}
+          onUpdateCampaign={handleUpdateCampaign}
+          orders={orders}
+          onUpdateOrders={handleUpdateOrders}
+          siteSettings={siteSettings}
+          onUpdateSiteSettings={handleUpdateSiteSettings}
+        />
+      </div>
+    );
+  }
+
+  // Otherwise return standard public store interface
   return (
     <>
       {/* Header */}
@@ -487,25 +526,6 @@ function App() {
         {/* PAGE 4: TRACK ORDER */}
         {activePage === 'track' && (
           <OrderTracker orderIdParam={trackingIdParam} />
-        )}
-
-        {/* PAGE 5: ADMIN PANEL */}
-        {activePage === 'admin' && (
-          <AdminPanel
-            isLoggedInAdmin={isLoggedInAdmin}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            products={products}
-            onUpdateProducts={handleUpdateProducts}
-            ads={ads}
-            onUpdateAds={handleUpdateAds}
-            campaign={campaign}
-            onUpdateCampaign={handleUpdateCampaign}
-            orders={orders}
-            onUpdateOrders={handleUpdateOrders}
-            siteSettings={siteSettings}
-            onUpdateSiteSettings={handleUpdateSiteSettings}
-          />
         )}
 
       </main>
