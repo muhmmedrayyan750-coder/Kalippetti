@@ -16,81 +16,8 @@ import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import './App.css';
 
-// Seed Data
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: 'prod-1',
-    title: 'Magnetic Drawing Board for Kids | 80 Beads Learning Board',
-    description: 'Create colorful drawings with this magic magnetic pen and beads. Perfect for learning shapes, numbers, letters, and developing motor skills in toddlers without making a mess!',
-    price: 499,
-    originalPrice: 750,
-    category: 'Creative Boards',
-    imageUrl: 'https://images.unsplash.com/photo-1603356029285-a04a78c47985?w=500&q=80',
-    rating: 4.8,
-    reviewsCount: 12,
-    inStock: true,
-  },
-  {
-    id: 'prod-2',
-    title: 'Kids Wooden Building Blocks | 50 Pcs Color Set',
-    description: 'Classic wooden block set crafted from organic, high-quality wood. Features multiple shapes and vibrant, child-safe water-based paints. Encourages engineering, spatial skills, and creative logic.',
-    price: 799,
-    originalPrice: 1200,
-    category: 'Wooden Blocks',
-    imageUrl: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=500&q=80',
-    rating: 4.9,
-    reviewsCount: 19,
-    inStock: true,
-  },
-  {
-    id: 'prod-3',
-    title: 'Interactive Robot Toy with Sound & Voice Control',
-    description: 'Smart dancing and speaking robot with programmable routines and light-up eyes. Plays music, responds to hand gestures, and helps introduce children to the basics of robotics.',
-    price: 999,
-    originalPrice: 1500,
-    category: 'Action & Science',
-    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a?w=500&q=80',
-    rating: 4.6,
-    reviewsCount: 8,
-    inStock: true,
-  },
-  {
-    id: 'prod-4',
-    title: 'Fluffy Teddy Bear Plush Toy | Soft Lavender Size',
-    description: 'Extremely soft, cuddly teddy bear made of premium hypo-allergenic fabric. A perfect sleepy time companion for toddlers and baby nurseries.',
-    price: 399,
-    originalPrice: 599,
-    category: 'Plush Toys',
-    imageUrl: 'https://images.unsplash.com/photo-1559251606-c623743a6d76?w=500&q=80',
-    rating: 5.0,
-    reviewsCount: 22,
-    inStock: true,
-  },
-  {
-    id: 'prod-5',
-    title: 'Wooden Railway Train Track Starter Set',
-    description: 'Vibrant train track set complete with wooden rails, magnetic train cars, small human figures, and trees. Integrates with standard track sets for infinite configurations.',
-    price: 1299,
-    originalPrice: 1999,
-    category: 'Wooden Blocks',
-    imageUrl: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&q=80',
-    rating: 4.7,
-    reviewsCount: 14,
-    inStock: true,
-  },
-  {
-    id: 'prod-6',
-    title: 'Kids DIY Science Volcano Eruption Experiment Kit',
-    description: 'Build your own volcano and watch it erupt! Includes reusable safety goggles, ingredients for multiple bubbly reactions, and a detailed science guide on geology and chemical reactions.',
-    price: 599,
-    originalPrice: 890,
-    category: 'Action & Science',
-    imageUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&q=80',
-    rating: 4.5,
-    reviewsCount: 6,
-    inStock: true,
-  },
-];
+// Seed Data (Started Empty as per request)
+const DEFAULT_PRODUCTS: Product[] = [];
 
 
 const DEFAULT_ADS: Advertisement[] = [
@@ -122,6 +49,12 @@ const DEFAULT_SETTINGS: SiteSettings = {
   contactNumber: '7012780209',
   officialEmail: 'muhmmedrayyan750@gmail.com',
   welcomeMessage: 'Shop premium, non-toxic, educational, and creative toys for your kids.',
+  primaryColor: '#7026b9',
+  secondaryColor: '#ff6b00',
+  instagramUrl: 'https://instagram.com',
+  facebookUrl: 'https://facebook.com',
+  shippingCharge: 60,
+  freeShippingThreshold: 999,
 };
 
 function App() {
@@ -144,8 +77,8 @@ function App() {
   const [trackingIdParam, setTrackingIdParam] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-  // Authentication State
-  const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
+  // Authentication State - Lock removed, admin is always accessible
+  const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(true);
 
   // Is Admin Route Checker
   const isAdminRoute = location.pathname.startsWith('/admin');
@@ -161,6 +94,17 @@ function App() {
 
   // Initialize and Seed LocalStorage Database
   useEffect(() => {
+    // Database Versioning for Factory Reset
+    const DB_VERSION = '2.0';
+    const currentVersion = localStorage.getItem('kali_db_version');
+    if (currentVersion !== DB_VERSION) {
+      localStorage.removeItem('kalippetti_products');
+      localStorage.removeItem('kalippetti_ads');
+      localStorage.removeItem('kalippetti_orders');
+      localStorage.removeItem('kalippetti_campaign');
+      localStorage.setItem('kali_db_version', DB_VERSION);
+    }
+
     // Products Seeding
     const savedProducts = localStorage.getItem('kalippetti_products');
     if (savedProducts) {
@@ -200,7 +144,11 @@ function App() {
     // Settings Seeding
     const savedSettings = localStorage.getItem('kalippetti_settings');
     if (savedSettings) {
-      setSiteSettings(JSON.parse(savedSettings));
+      const parsed = JSON.parse(savedSettings);
+      setSiteSettings(parsed);
+      // Apply theme colors on load
+      if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+      if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
     } else {
       localStorage.setItem('kalippetti_settings', JSON.stringify(DEFAULT_SETTINGS));
       setSiteSettings(DEFAULT_SETTINGS);
@@ -260,6 +208,10 @@ function App() {
   const handleUpdateSiteSettings = (newSettings: SiteSettings) => {
     setSiteSettings(newSettings);
     localStorage.setItem('kalippetti_settings', JSON.stringify(newSettings));
+
+    // Update dynamic CSS variables for theme colors
+    document.documentElement.style.setProperty('--primary', newSettings.primaryColor);
+    document.documentElement.style.setProperty('--secondary', newSettings.secondaryColor);
 
     // Update document title if site name changed
     document.title = `${newSettings.siteName} - Premium Kids Toys Store`;
@@ -351,7 +303,7 @@ function App() {
     setActivePage('track');
   };
 
-  // Login handler
+  // Login handler (kept for compatibility but lock is removed)
   const handleLoginSuccess = () => {
     setIsLoggedInAdmin(true);
   };
@@ -381,7 +333,6 @@ function App() {
           isLoggedInAdmin={isLoggedInAdmin}
           onLoginSuccess={handleLoginSuccess}
           onLogout={() => {
-            setIsLoggedInAdmin(false);
             setActivePage('home');
             navigate('/');
           }}

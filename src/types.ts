@@ -7,4 +7,10 @@ export interface SiteSettings {
     contactNumber: string;
     officialEmail: string;
     welcomeMessage: string;
+    primaryColor: string;
+    secondaryColor: string;
+    instagramUrl?: string;
+    facebookUrl?: string;
+    shippingCharge: number;
+    freeShippingThreshold: number;
 }

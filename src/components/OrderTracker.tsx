@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, ShoppingBag, ClipboardCheck, Truck, Gift, AlertCircle, Calendar, MapPin, Phone } from 'lucide-react';
 
@@ -55,9 +56,9 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderIdParam = '' })
       {/* Tracker Search Bar */}
       <div className="tracker-search-card wavy-card">
         <div className="tracker-search-row">
-          <input 
-            type="text" 
-            placeholder="Enter Order ID (e.g., KP-5432)" 
+          <input
+            type="text"
+            placeholder="Enter Order ID (e.g., KP-5432)"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
             className="form-input tracker-input"
@@ -65,7 +66,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderIdParam = '' })
               if (e.key === 'Enter') handleTrack(searchId);
             }}
           />
-          <button 
+          <button
             onClick={() => handleTrack(searchId)}
             className="btn btn-primary tracker-search-btn"
           >
@@ -99,7 +100,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderIdParam = '' })
                 const StepIcon = step.icon;
                 const isCompleted = idx <= currentStatusIdx;
                 const isActive = idx === currentStatusIdx;
-                
+
                 return (
                   <div key={idx} className={`step-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}>
                     <div className="step-icon-wrapper">
@@ -158,7 +159,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderIdParam = '' })
                   </div>
                 ))}
               </div>
-              
+
               <div className="tracker-total-block">
                 <div className="total-row">
                   <span>Subtotal</span>

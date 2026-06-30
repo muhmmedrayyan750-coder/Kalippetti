@@ -48,6 +48,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Active Tab: 'orders' | 'products' | 'ads' | 'campaign' | 'settings'
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'ads' | 'campaign' | 'settings'>('orders');
 
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+
   // Settings form state
   const [settingsForm, setSettingsForm] = useState<SiteSettings>(siteSettings);
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -81,7 +83,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     subtitle: '',
     imageUrl: '',
     bgColor: '#7026b9',
-    ctaText: 'Shop Now 🧸',
+    ctaText: 'Shop Now ',
   });
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -99,6 +101,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // Product actions
+  // Product actions
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProduct.title || !newProduct.price || !newProduct.imageUrl) {
@@ -106,34 +109,78 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
-    const createdProduct: Product = {
-      id: `prod-${Date.now()}`,
-      title: newProduct.title,
-      description: newProduct.description || 'A magical toy for kids.',
-      price: parseFloat(newProduct.price),
-      originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : undefined,
-      category: newProduct.category || 'General',
-      imageUrl: newProduct.imageUrl,
-      rating: parseFloat(newProduct.rating),
-      reviewsCount: Math.floor(Math.random() * 15) + 3,
-      inStock: newProduct.inStock,
-    };
+    if (editingProductId) {
+      // Update existing product
+      const updated = products.map(p =>
+        p.id === editingProductId
+          ? {
+            ...p,
+            title: newProduct.title,
+            description: newProduct.description,
+            price: parseFloat(newProduct.price),
+            originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : undefined,
+            category: newProduct.category,
+            imageUrl: newProduct.imageUrl,
+            rating: parseFloat(newProduct.rating),
+            inStock: newProduct.inStock,
+          }
+          : p
+      );
+      onUpdateProducts(updated);
+      setEditingProductId(null);
 
-    const updated = [...products, createdProduct];
-    onUpdateProducts(updated);
+      // Reset form
+      setNewProduct({
+        title: '', description: '', price: '', originalPrice: '',
+        imageUrl: '', category: 'Creative Boards', rating: '5', inStock: true,
+      });
 
-    // Reset form
+      alert('Product updated successfully!');
+    } else {
+      // Create new product
+      const createdProduct: Product = {
+        id: `prod-${Date.now()}`,
+        title: newProduct.title,
+        description: newProduct.description || 'A magical toy for kids.',
+        price: parseFloat(newProduct.price),
+        originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : undefined,
+        category: newProduct.category || 'General',
+        imageUrl: newProduct.imageUrl,
+        rating: parseFloat(newProduct.rating),
+        reviewsCount: Math.floor(Math.random() * 15) + 3,
+        inStock: newProduct.inStock,
+      };
+
+      const updated = [...products, createdProduct];
+      onUpdateProducts(updated);
+
+      // Reset form
+      setNewProduct({
+        title: '', description: '', price: '', originalPrice: '',
+        imageUrl: '', category: 'Creative Boards', rating: '5', inStock: true,
+      });
+
+      alert('Product added successfully!');
+    }
+  };
+
+  const startEditingProduct = (product: Product) => {
+    setEditingProductId(product.id);
     setNewProduct({
-      title: '',
-      description: '',
-      price: '',
-      originalPrice: '',
-      imageUrl: '',
-      category: 'Creative Boards',
-      rating: '5',
-      inStock: true,
+      title: product.title,
+      description: product.description,
+      price: product.price.toString(),
+      originalPrice: product.originalPrice?.toString() || '',
+      imageUrl: product.imageUrl,
+      category: product.category,
+      rating: product.rating.toString(),
+      inStock: product.inStock,
     });
-    alert('Product added successfully!');
+    // Scroll to form
+    const formElement = document.querySelector('.inventory-form-card');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleDeleteProduct = (e: React.MouseEvent, id: string) => {
@@ -276,7 +323,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const shippedOrdersCount = orders.filter(o => o.status === 'Shipped').length;
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
-  if (!isLoggedInAdmin) {
+  // Admin lock removed — login screen is disabled. Dashboard loads directly.
+  if (false && !isLoggedInAdmin) {
     return (
       <div className="ag-login-universe" id="ag-login-root">
         {/* Animated particle field */}
@@ -1106,7 +1154,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
         <button onClick={onLogout} className="btn btn-light logout-btn">
           <LogOut size={16} />
-          <span>Log Out</span>
+          <span>← Back to Store</span>
         </button>
       </div>
 
@@ -1297,7 +1345,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <h3>Add New Toy</h3>
                 <form onSubmit={handleAddProduct} className="inventory-form">
                   <div className="form-group">
-                    <label className="form-label">Toy Title *</label>
+                    <label className="form-label">{editingProductId ? 'Editing Toy ID: ' + editingProductId : 'Toy Title *'}</label>
                     <input
                       type="text"
                       placeholder="E.g. Magnetic Drawing Board"
@@ -1399,10 +1447,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <label htmlFor="inStockCheck">Product in Stock (In Stock)</label>
                   </div>
 
-                  <button type="submit" className="btn btn-secondary w-full submit-prod-btn">
-                    <Plus size={18} />
-                    <span>Add Toy Product</span>
-                  </button>
+                  <div className="form-actions-row" style={{ display: 'flex', gap: '12px' }}>
+                    <button type="submit" className="btn btn-secondary w-full submit-prod-btn">
+                      {editingProductId ? <Settings size={18} /> : <Plus size={18} />}
+                      <span>{editingProductId ? 'Update Toy Details' : 'Add Toy Product'}</span>
+                    </button>
+
+                    {editingProductId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingProductId(null);
+                          setNewProduct({
+                            title: '', description: '', price: '', originalPrice: '',
+                            imageUrl: '', category: 'Creative Boards', rating: '5', inStock: true,
+                          });
+                        }}
+                        className="btn btn-light"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
                 </form>
               </div>
 
@@ -1435,33 +1501,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         )}
                       </div>
 
-                      {deletingProductId === p.id ? (
-                        <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+                      <div className="inv-actions" style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() => startEditingProduct(p)}
+                          className="inv-edit-btn"
+                          style={{ color: 'var(--primary)', cursor: 'pointer' }}
+                          title="Edit Product"
+                        >
+                          <Settings size={16} />
+                        </button>
+
+                        {deletingProductId === p.id ? (
+                          <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteProduct(e, p.id)}
+                              className="btn-confirm-delete"
+                            >
+                              Del
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingProductId(null); }}
+                              className="btn-cancel-delete"
+                            >
+                              X
+                            </button>
+                          </div>
+                        ) : (
                           <button
                             type="button"
                             onClick={(e) => handleDeleteProduct(e, p.id)}
-                            className="btn-confirm-delete"
+                            className="inv-delete-btn"
+                            title="Delete Product"
                           >
-                            Delete
+                            <Trash2 size={16} />
                           </button>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingProductId(null); }}
-                            className="btn-cancel-delete"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteProduct(e, p.id)}
-                          className="inv-delete-btn"
-                          title="Delete Product"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1790,6 +1868,89 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="form-input"
                         value={settingsForm.officialEmail}
                         onChange={(e) => setSettingsForm({ ...settingsForm, officialEmail: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group d-flex gap-16">
+                    <div style={{ flex: 1 }}>
+                      <label>Instagram URL (Optional)</label>
+                      <input
+                        type="url"
+                        className="form-input"
+                        placeholder="https://instagram.com/..."
+                        value={settingsForm.instagramUrl || ''}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, instagramUrl: e.target.value })}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Facebook URL (Optional)</label>
+                      <input
+                        type="url"
+                        className="form-input"
+                        placeholder="https://facebook.com/..."
+                        value={settingsForm.facebookUrl || ''}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, facebookUrl: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group d-flex gap-16">
+                    <div style={{ flex: 1 }}>
+                      <label>Primary Theme Color</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          type="color"
+                          className="form-input"
+                          style={{ width: '50px', padding: '2px', height: '44px' }}
+                          value={settingsForm.primaryColor}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, primaryColor: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={settingsForm.primaryColor}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, primaryColor: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Secondary Accent Color</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          type="color"
+                          className="form-input"
+                          style={{ width: '50px', padding: '2px', height: '44px' }}
+                          value={settingsForm.secondaryColor}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, secondaryColor: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={settingsForm.secondaryColor}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, secondaryColor: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group d-flex gap-16">
+                    <div style={{ flex: 1 }}>
+                      <label>Static Shipping Charge (Rs.)</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={settingsForm.shippingCharge}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, shippingCharge: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Free Shipping Threshold (Rs.)</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={settingsForm.freeShippingThreshold}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, freeShippingThreshold: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                   </div>
