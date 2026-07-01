@@ -16,8 +16,56 @@ import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import './App.css';
 
-// Seed Data (Started Empty as per request)
-const DEFAULT_PRODUCTS: Product[] = [];
+const DEFAULT_PRODUCTS: Product[] = [
+  {
+    id: 'prod-1',
+    title: 'Play & Learn Intelligence Book for Kids',
+    description: 'Interactive musical educational toy book.',
+    price: 449,
+    originalPrice: 750,
+    category: 'Educational',
+    imageUrl: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=600&q=80',
+    rating: 5,
+    reviewsCount: 2,
+    inStock: true
+  },
+  {
+    id: 'prod-2',
+    title: 'Wooden Spelling Maze for Kids | Letters',
+    description: 'Wooden spelling maze and letter learning board.',
+    price: 769,
+    originalPrice: 880,
+    category: 'Wooden Blocks',
+    imageUrl: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=600&q=80',
+    rating: 4.8,
+    reviewsCount: 15,
+    inStock: false
+  },
+  {
+    id: 'prod-3',
+    title: 'STEM Magnetic Sticks (25pcs) | Toy Set',
+    description: 'Building block sticks for children.',
+    price: 599,
+    originalPrice: 999,
+    category: 'Action & Science',
+    imageUrl: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&q=80',
+    rating: 4.5,
+    reviewsCount: 8,
+    inStock: true
+  },
+  {
+    id: 'prod-4',
+    title: 'Wooden Memory Chess | Color Match',
+    description: 'Memory training wooden chess for kids.',
+    price: 349,
+    originalPrice: 499,
+    category: 'Creative Boards',
+    imageUrl: 'https://images.unsplash.com/photo-1618842676088-c4d48a6a7c9d?w=600&q=80',
+    rating: 4.9,
+    reviewsCount: 24,
+    inStock: true
+  }
+];
 
 
 const DEFAULT_ADS: Advertisement[] = [
@@ -88,7 +136,7 @@ function App() {
   // Initialize and Seed LocalStorage Database
   useEffect(() => {
     // Database Versioning for Factory Reset
-    const DB_VERSION = '2.0';
+    const DB_VERSION = '2.1';
     const currentVersion = localStorage.getItem('kali_db_version');
     if (currentVersion !== DB_VERSION) {
       localStorage.removeItem('kalippetti_products');

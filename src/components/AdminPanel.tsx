@@ -317,6 +317,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, '_blank');
   };
 
+  const handleEmailCustomer = (order: any) => {
+    if (!order.email || order.email === 'None' || order.email.trim() === '') {
+      alert("Customer didn't provide an email address.");
+      return;
+    }
+    const adminMessage = `Hello ${order.customerName},\n\nWe are writing to update you on your Order ID: ${order.id}.\n\nYour current order status is: ${order.status}.\n\nThank you for shopping with ${siteSettings.siteName}!`;
+    const encodedSubject = encodeURIComponent(`Update on your ${siteSettings.siteName} Order: ${order.id}`);
+    const encodedBody = encodeURIComponent(adminMessage);
+    window.open(`mailto:${order.email}?subject=${encodedSubject}&body=${encodedBody}`, '_blank');
+  };
+
   // Stats calculators
   const totalRevenue = orders.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? o.total : 0), 0);
   const pendingOrdersCount = orders.filter(o => o.status === 'Placed').length;
@@ -1258,6 +1269,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <td>
                           <div className="tbl-cust-name">{order.customerName}</div>
                           <div className="tbl-cust-phone">{order.phone}</div>
+                          {order.email && <div className="tbl-cust-email">{order.email}</div>}
                           <div className="tbl-cust-address">{order.address}</div>
                         </td>
                         <td>
@@ -1295,6 +1307,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             >
                               <MessageSquare size={16} />
                               <span>WhatsApp</span>
+                            </button>
+                            <button
+                              onClick={() => handleEmailCustomer(order)}
+                              className="tbl-action-btn contact-btn"
+                              title="Email Customer"
+                              style={{ background: '#e3f2fd', color: '#1976d2' }}
+                            >
+                              <Mail size={16} />
+                              <span>Email</span>
                             </button>
                             {deletingOrderId === order.id ? (
                               <div className="delete-confirm-wrapper" onClick={(e) => e.stopPropagation()}>
