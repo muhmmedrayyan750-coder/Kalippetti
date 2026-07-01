@@ -9,11 +9,6 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ setActivePage, siteSettings }) => {
-  const handleAdminClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setActivePage('admin');
-  };
-
   return (
     <footer className="site-footer">
       <div className="footer-container">
@@ -51,29 +46,11 @@ export const Footer: React.FC<FooterProps> = ({ setActivePage, siteSettings }) =
         </div>
       </div>
 
-      {/* Copyright Line & Hidden Lock */}
+      {/* Copyright Line */}
       <div className="footer-bottom">
         <div className="bottom-container">
           <p>
             &copy; {new Date().getFullYear()} {siteSettings.siteName}. Made with <Heart size={12} fill="var(--secondary)" color="var(--secondary)" style={{ display: 'inline' }} /> for Kids.
-            {/* The Invisible Admin Lock */}
-            <span
-              onClick={handleAdminClick}
-              className="invisible-admin-lock"
-              style={{
-                opacity: 0.05,
-                cursor: 'default',
-                fontSize: '10px',
-                paddingLeft: '10px',
-                display: 'inline-block',
-                userSelect: 'none',
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.3'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.05'; }}
-            >
-              🔒
-            </span>
           </p>
           <div className="payment-icons">
             <span className="payment-badge">WhatsApp Checkout</span>

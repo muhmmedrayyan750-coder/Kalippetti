@@ -77,20 +77,13 @@ function App() {
   const [trackingIdParam, setTrackingIdParam] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-  // Authentication State - Lock removed, admin is always accessible
-  const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(true);
+  // Authentication State — requires admin sign-in
+  const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(
+    () => localStorage.getItem('kalippetti_admin_session') === 'true'
+  );
 
   // Is Admin Route Checker
   const isAdminRoute = location.pathname.startsWith('/admin');
-
-  // Handle activePage toggling to routes
-  useEffect(() => {
-    if (activePage === 'admin' && !isAdminRoute) {
-      navigate('/admin');
-    } else if (activePage !== 'admin' && isAdminRoute) {
-      navigate('/');
-    }
-  }, [activePage, isAdminRoute, navigate]);
 
   // Initialize and Seed LocalStorage Database
   useEffect(() => {
@@ -234,24 +227,6 @@ function App() {
     setCartOpen(true); // Open the sidebar drawer for confirmation
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    if (products.find((p) => p.id === productId)) {
-      const updated = products.filter((p) => p.id !== productId);
-      handleUpdateProducts(updated);
-
-      // Clean up campaign if it matches the deleted product
-      if (campaign && campaign.id === productId) {
-        handleUpdateCampaign(null);
-      }
-
-      // Clean up cart items containing the deleted product
-      const updatedCart = cart.filter((item) => item.product.id !== productId);
-      if (updatedCart.length !== cart.length) {
-        syncCart(updatedCart);
-      }
-    }
-  };
-
   const handleBuyNow = (product: Product, quantity: number = 1) => {
     const existing = cart.find((item) => item.product.id === product.id);
     let updated: CartItem[];
@@ -303,10 +278,56 @@ function App() {
     setActivePage('track');
   };
 
-  // Login handler (kept for compatibility but lock is removed)
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (rememberMe = false) => {
     setIsLoggedInAdmin(true);
+    if (rememberMe) {
+      localStorage.setItem('kalippetti_admin_session', 'true');
+    }
   };
+
+  const handleAdminLogout = () => {
+    setIsLoggedInAdmin(false);
+    localStorage.removeItem('kalippetti_admin_session');
+    setActivePage('home');
+    navigate('/');
+  };
+
+  // Sync admin panel changes across tabs (orders, products, settings, etc.)
+  useEffect(() => {
+    const handleStorageSync = (e: StorageEvent) => {
+      if (!e.key || e.newValue === null) return;
+      try {
+        switch (e.key) {
+          case 'kalippetti_products':
+            setProducts(JSON.parse(e.newValue));
+            break;
+          case 'kalippetti_ads':
+            setAds(JSON.parse(e.newValue));
+            break;
+          case 'kalippetti_orders':
+            setOrders(JSON.parse(e.newValue));
+            break;
+          case 'kalippetti_campaign':
+            setCampaign(JSON.parse(e.newValue));
+            break;
+          case 'kalippetti_settings': {
+            const parsed = JSON.parse(e.newValue);
+            setSiteSettings(parsed);
+            if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+            if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
+            break;
+          }
+          case 'kalippetti_admin_session':
+            setIsLoggedInAdmin(e.newValue === 'true');
+            break;
+        }
+      } catch {
+        // ignore malformed storage payloads
+      }
+    };
+    window.addEventListener('storage', handleStorageSync);
+    return () => window.removeEventListener('storage', handleStorageSync);
+  }, []);
 
   // Filtered and Sorted Products list
   const filteredProducts = products.filter((product) => {
@@ -332,10 +353,7 @@ function App() {
         <AdminPanel
           isLoggedInAdmin={isLoggedInAdmin}
           onLoginSuccess={handleLoginSuccess}
-          onLogout={() => {
-            setActivePage('home');
-            navigate('/');
-          }}
+          onLogout={handleAdminLogout}
           products={products}
           onUpdateProducts={handleUpdateProducts}
           ads={ads}
@@ -362,7 +380,6 @@ function App() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         toggleCart={() => setCartOpen(!cartOpen)}
-        isLoggedInAdmin={isLoggedInAdmin}
         siteSettings={siteSettings}
       />
 
@@ -404,8 +421,6 @@ function App() {
                     onAddToCart={handleAddToCart}
                     onBuyNow={handleBuyNow}
                     onSelectProduct={setSelectedProductId}
-                    isLoggedInAdmin={isLoggedInAdmin}
-                    onDeleteProduct={handleDeleteProduct}
                   />
                 ))}
               </div>
@@ -455,8 +470,6 @@ function App() {
                     onAddToCart={handleAddToCart}
                     onBuyNow={handleBuyNow}
                     onSelectProduct={setSelectedProductId}
-                    isLoggedInAdmin={isLoggedInAdmin}
-                    onDeleteProduct={handleDeleteProduct}
                   />
                 ))}
               </div>
@@ -596,22 +609,6 @@ function App() {
                     Buy Now
                   </button>
                 </div>
-
-                {/* Admin Delete from Modal */}
-                {isLoggedInAdmin && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Delete "${selectedProduct.title}"? This cannot be undone.`)) {
-                        handleDeleteProduct(selectedProduct.id);
-                        setSelectedProductId(null);
-                      }
-                    }}
-                    className="btn btn-danger modal-admin-delete-btn"
-                    style={{ width: '100%', marginTop: '12px' }}
-                  >
-                    🗑️ Delete This Product (Admin)
-                  </button>
-                )}
 
               </div>
             </div>

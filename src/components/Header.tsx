@@ -9,7 +9,6 @@ interface HeaderProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   toggleCart: () => void;
-  isLoggedInAdmin: boolean;
   siteSettings: {
     logoPart1: string;
     logoPart2: string;
@@ -23,7 +22,6 @@ export const Header: React.FC<HeaderProps> = ({
   searchTerm,
   setSearchTerm,
   toggleCart,
-  isLoggedInAdmin,
   siteSettings,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -82,17 +80,9 @@ export const Header: React.FC<HeaderProps> = ({
           >
             Track Order
           </button>
-          {isLoggedInAdmin && (
-            <button
-              className={`nav-link admin-indicator ${activePage === 'admin' ? 'active' : ''}`}
-              onClick={() => handleNavClick('admin')}
-            >
-              Admin Panel
-            </button>
-          )}
         </nav>
 
-        {/* Actions (Search, Cart, Admin Indicator) */}
+        {/* Actions (Search, Cart) */}
         <div className="header-actions">
           {/* Search bar */}
           <div className={`search-wrapper ${showSearchInput ? 'expanded' : ''}`}>
@@ -159,14 +149,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Track Order
             </button>
-            {isLoggedInAdmin && (
-              <button
-                className={`mobile-nav-link admin-indicator ${activePage === 'admin' ? 'active' : ''}`}
-                onClick={() => handleNavClick('admin')}
-              >
-                Admin Panel Dashboard
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -227,11 +209,6 @@ export const Header: React.FC<HeaderProps> = ({
           height: 8px;
           border-radius: 50%;
           background: var(--secondary);
-        }
-        .admin-indicator {
-          border: 2px dashed var(--primary);
-          color: var(--primary);
-          background: rgba(112, 38, 185, 0.05);
         }
         .header-actions {
           display: flex;

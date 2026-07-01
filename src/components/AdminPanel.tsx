@@ -6,7 +6,7 @@ import type { SiteSettings } from '../types';
 
 interface AdminPanelProps {
   isLoggedInAdmin: boolean;
-  onLoginSuccess: () => void;
+  onLoginSuccess: (rememberMe?: boolean) => void;
   onLogout: () => void;
   products: Product[];
   onUpdateProducts: (newProducts: Product[]) => void;
@@ -93,7 +93,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       (cleanUsername === 'admin' || cleanUsername === 'admin@adminsecure.com' || cleanUsername === 'admin@company.com') &&
       password === 'kalippetti@123'
     ) {
-      onLoginSuccess();
+      onLoginSuccess(rememberMe);
       setLoginError('');
     } else {
       setLoginError('Invalid Email Address or Password!');
@@ -323,8 +323,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const shippedOrdersCount = orders.filter(o => o.status === 'Shipped').length;
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
-  // Admin lock removed — login screen is disabled. Dashboard loads directly.
-  if (false && !isLoggedInAdmin) {
+  if (!isLoggedInAdmin) {
     return (
       <div className="ag-login-universe" id="ag-login-root">
         {/* Animated particle field */}
@@ -1154,7 +1153,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
         <button onClick={onLogout} className="btn btn-light logout-btn">
           <LogOut size={16} />
-          <span>← Back to Store</span>
+          <span>Sign Out</span>
         </button>
       </div>
 
