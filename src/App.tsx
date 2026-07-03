@@ -16,56 +16,8 @@ import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import './App.css';
 
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: 'prod-1',
-    title: 'Play & Learn Intelligence Book for Kids',
-    description: 'Interactive musical educational toy book.',
-    price: 449,
-    originalPrice: 750,
-    category: 'Educational',
-    imageUrl: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=600&q=80',
-    rating: 5,
-    reviewsCount: 2,
-    inStock: true
-  },
-  {
-    id: 'prod-2',
-    title: 'Wooden Spelling Maze for Kids | Letters',
-    description: 'Wooden spelling maze and letter learning board.',
-    price: 769,
-    originalPrice: 880,
-    category: 'Wooden Blocks',
-    imageUrl: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=600&q=80',
-    rating: 4.8,
-    reviewsCount: 15,
-    inStock: false
-  },
-  {
-    id: 'prod-3',
-    title: 'STEM Magnetic Sticks (25pcs) | Toy Set',
-    description: 'Building block sticks for children.',
-    price: 599,
-    originalPrice: 999,
-    category: 'Action & Science',
-    imageUrl: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&q=80',
-    rating: 4.5,
-    reviewsCount: 8,
-    inStock: true
-  },
-  {
-    id: 'prod-4',
-    title: 'Wooden Memory Chess | Color Match',
-    description: 'Memory training wooden chess for kids.',
-    price: 349,
-    originalPrice: 499,
-    category: 'Creative Boards',
-    imageUrl: 'https://images.unsplash.com/photo-1618842676088-c4d48a6a7c9d?w=600&q=80',
-    rating: 4.9,
-    reviewsCount: 24,
-    inStock: true
-  }
-];
+// Seed Data (Started Empty as per request)
+const DEFAULT_PRODUCTS: Product[] = [];
 
 
 const DEFAULT_ADS: Advertisement[] = [
@@ -133,129 +85,188 @@ function App() {
   // Is Admin Route Checker
   const isAdminRoute = location.pathname.startsWith('/admin');
 
-  // Initialize and Seed LocalStorage Database
+  // SHARED DATABASE BLOB IDs FOR SITE-WIDE GLOBAL SYNC
+  const SHARED_IDS = {
+    products: '019f28a9-101d-74a6-bb98-ae67b9ee5a89',
+    ads: '019f28a9-14c9-7be2-862a-5368eed7b8d7',
+    campaign: '019f28a9-1783-76c0-90cf-331dbde692b7',
+    orders: '019f28a9-1a03-74dc-b778-3ca048b6ae97',
+    settings: '019f28a9-1c33-7476-b57c-60c239729ad9'
+  };
+
+  const getBlobUrl = (key: keyof typeof SHARED_IDS) => `https://jsonblob.com/api/jsonBlob/${SHARED_IDS[key]}`;
+
+  // Initialize and load database from JSONBlob cloud
   useEffect(() => {
-    // Database Versioning for Factory Reset
-    const DB_VERSION = '2.1';
-    const currentVersion = localStorage.getItem('kali_db_version');
-    if (currentVersion !== DB_VERSION) {
-      localStorage.removeItem('kalippetti_products');
-      localStorage.removeItem('kalippetti_ads');
-      localStorage.removeItem('kalippetti_orders');
-      localStorage.removeItem('kalippetti_campaign');
-      localStorage.setItem('kali_db_version', DB_VERSION);
-    }
+    const loadCloudData = async () => {
+      try {
+        const [prodRes, adsRes, campRes, ordRes, setRes] = await Promise.all([
+          fetch(getBlobUrl('products')),
+          fetch(getBlobUrl('ads')),
+          fetch(getBlobUrl('campaign')),
+          fetch(getBlobUrl('orders')),
+          fetch(getBlobUrl('settings'))
+        ]);
 
-    // Products Seeding
-    const savedProducts = localStorage.getItem('kalippetti_products');
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      localStorage.setItem('kalippetti_products', JSON.stringify(DEFAULT_PRODUCTS));
-      setProducts(DEFAULT_PRODUCTS);
-    }
+        if (prodRes.ok) setProducts(await prodRes.json());
+        if (adsRes.ok) setAds(await adsRes.json());
+        if (campRes.ok) setCampaign(await campRes.json());
+        if (ordRes.ok) setOrders(await ordRes.json());
+        if (setRes.ok) {
+          const parsed = await setRes.json();
+          setSiteSettings(parsed);
+          if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+          if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
+        }
+      } catch (err) {
+        console.error('Error loading data from cloud db:', err);
+      }
+    };
 
-    // Ads Seeding
-    const savedAds = localStorage.getItem('kalippetti_ads');
-    if (savedAds) {
-      setAds(JSON.parse(savedAds));
-    } else {
-      localStorage.setItem('kalippetti_ads', JSON.stringify(DEFAULT_ADS));
-      setAds(DEFAULT_ADS);
-    }
-
-    // Campaign Seeding
-    const savedCampaign = localStorage.getItem('kalippetti_campaign');
-    if (savedCampaign) {
-      setCampaign(JSON.parse(savedCampaign));
-    } else {
-      localStorage.setItem('kalippetti_campaign', JSON.stringify(null));
-      setCampaign(null);
-    }
-
-    // Orders Seeding
-    const savedOrders = localStorage.getItem('kalippetti_orders');
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    } else {
-      localStorage.setItem('kalippetti_orders', JSON.stringify([]));
-      setOrders([]);
-    }
-
-    // Settings Seeding
-    const savedSettings = localStorage.getItem('kalippetti_settings');
-    if (savedSettings) {
-      const parsed = JSON.parse(savedSettings);
-      setSiteSettings(parsed);
-      // Apply theme colors on load
-      if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
-      if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
-    } else {
-      localStorage.setItem('kalippetti_settings', JSON.stringify(DEFAULT_SETTINGS));
-      setSiteSettings(DEFAULT_SETTINGS);
-    }
-
-    // Cart loading
+    // Also load local cart
     const savedCart = localStorage.getItem('kalippetti_cart');
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
 
-    // URL Tracking Parameter Check (e.g. ?track=KP-8392)
+    // URL Tracking Parameter Check
     const params = new URLSearchParams(window.location.search);
     const trackId = params.get('track');
     if (trackId) {
       setActivePage('track');
       setTrackingIdParam(trackId);
     }
+
+    loadCloudData();
   }, []);
 
-  // Update document title and meta information when settings change
+  // Poll cloud data periodically to keep customers synced in real-time
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const [prodRes, adsRes, campRes, setRes] = await Promise.all([
+          fetch(getBlobUrl('products')),
+          fetch(getBlobUrl('ads')),
+          fetch(getBlobUrl('campaign')),
+          fetch(getBlobUrl('settings'))
+        ]);
+
+        if (prodRes.ok) {
+          const cloudProducts = await prodRes.ok ? await prodRes.json() : [];
+          if (JSON.stringify(cloudProducts) !== JSON.stringify(products)) {
+            setProducts(cloudProducts);
+          }
+        }
+        if (adsRes.ok) {
+          const cloudAds = await adsRes.json();
+          if (JSON.stringify(cloudAds) !== JSON.stringify(ads)) {
+            setAds(cloudAds);
+          }
+        }
+        if (campRes.ok) {
+          const cloudCampaign = await campRes.json();
+          if (JSON.stringify(cloudCampaign) !== JSON.stringify(campaign)) {
+            setCampaign(cloudCampaign);
+          }
+        }
+        if (setRes.ok) {
+          const cloudSettings = await setRes.json();
+          if (JSON.stringify(cloudSettings) !== JSON.stringify(siteSettings)) {
+            setSiteSettings(cloudSettings);
+            if (cloudSettings.primaryColor) document.documentElement.style.setProperty('--primary', cloudSettings.primaryColor);
+            if (cloudSettings.secondaryColor) document.documentElement.style.setProperty('--secondary', cloudSettings.secondaryColor);
+          }
+        }
+      } catch (err) {
+        console.error('Error polling cloud db:', err);
+      }
+    }, 12000); // Check for global updates every 12 seconds
+
+    return () => clearInterval(interval);
+  }, [products, siteSettings, ads, campaign]);
+
+  // Update document title when settings change
   useEffect(() => {
     document.title = `${siteSettings.siteName} - Premium Kids Toys Store`;
   }, [siteSettings.siteName]);
 
-  // Sync Cart to LocalStorage
+  // Sync Cart to LocalStorage (Cart remains private to each visitor's browser/session)
   const syncCart = (updatedCart: CartItem[]) => {
     setCart(updatedCart);
     localStorage.setItem('kalippetti_cart', JSON.stringify(updatedCart));
   };
 
-  // Update Products & sync with LocalStorage
-  const handleUpdateProducts = (newProducts: Product[]) => {
+  // Update Products & sync with Cloud Database
+  const handleUpdateProducts = async (newProducts: Product[]) => {
     setProducts(newProducts);
-    localStorage.setItem('kalippetti_products', JSON.stringify(newProducts));
+    try {
+      await fetch(getBlobUrl('products'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProducts)
+      });
+    } catch (e) {
+      console.error('Failed to update products remotely:', e);
+    }
   };
 
-  // Update Ads & sync with LocalStorage
-  const handleUpdateAds = (newAds: Advertisement[]) => {
+  // Update Ads & sync with Cloud Database
+  const handleUpdateAds = async (newAds: Advertisement[]) => {
     setAds(newAds);
-    localStorage.setItem('kalippetti_ads', JSON.stringify(newAds));
+    try {
+      await fetch(getBlobUrl('ads'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAds)
+      });
+    } catch (e) {
+      console.error('Failed to update ads remotely:', e);
+    }
   };
 
-  // Update Orders & sync with LocalStorage
-  const handleUpdateOrders = (newOrders: any[]) => {
+  // Update Orders & sync with Cloud Database
+  const handleUpdateOrders = async (newOrders: any[]) => {
     setOrders(newOrders);
-    localStorage.setItem('kalippetti_orders', JSON.stringify(newOrders));
+    try {
+      await fetch(getBlobUrl('orders'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrders)
+      });
+    } catch (e) {
+      console.error('Failed to update orders remotely:', e);
+    }
   };
 
-  // Update Campaign & sync with LocalStorage
-  const handleUpdateCampaign = (newCampaign: Product | null) => {
+  // Update Campaign & sync with Cloud Database
+  const handleUpdateCampaign = async (newCampaign: Product | null) => {
     setCampaign(newCampaign);
-    localStorage.setItem('kalippetti_campaign', JSON.stringify(newCampaign));
+    try {
+      await fetch(getBlobUrl('campaign'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCampaign)
+      });
+    } catch (e) {
+      console.error('Failed to update campaign remotely:', e);
+    }
   };
 
-  // Update Site Settings & sync with LocalStorage
-  const handleUpdateSiteSettings = (newSettings: SiteSettings) => {
+  // Update Site Settings & sync with Cloud Database
+  const handleUpdateSiteSettings = async (newSettings: SiteSettings) => {
     setSiteSettings(newSettings);
-    localStorage.setItem('kalippetti_settings', JSON.stringify(newSettings));
-
-    // Update dynamic CSS variables for theme colors
     document.documentElement.style.setProperty('--primary', newSettings.primaryColor);
     document.documentElement.style.setProperty('--secondary', newSettings.secondaryColor);
-
-    // Update document title if site name changed
     document.title = `${newSettings.siteName} - Premium Kids Toys Store`;
+    try {
+      await fetch(getBlobUrl('settings'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings)
+      });
+    } catch (e) {
+      console.error('Failed to update settings remotely:', e);
+    }
   };
 
   // Cart operations

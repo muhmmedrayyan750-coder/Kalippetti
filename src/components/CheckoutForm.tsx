@@ -24,7 +24,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     landmark: '',
     pincode: '',
     cityState: '',
-    email: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,9 +64,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       tempErrors.pincode = 'Pin code must be exactly 6 digits';
     }
     if (!formData.cityState.trim()) tempErrors.cityState = 'City and State are required';
-    if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
-      tempErrors.email = 'Please enter a valid email address';
-    }
 
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
@@ -105,7 +101,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         quantity: item.quantity,
         category: item.product.category,
       })),
-      email: formData.email ? formData.email.trim() : '',
       subtotal,
       shippingCharge,
       total,
@@ -232,19 +227,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 />
                 {errors.pincode && <span className="field-error">{errors.pincode}</span>}
               </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Email Address (Optional)</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="For order updates"
-                className={`form-input ${errors.email ? 'error' : ''}`}
-              />
-              {errors.email && <span className="field-error">{errors.email}</span>}
             </div>
 
             <div className="form-group">
