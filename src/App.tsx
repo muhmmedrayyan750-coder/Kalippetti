@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+
 import Header from './components/Header';
 import Footer from './components/Footer';
 import AdCarousel from './components/AdCarousel';
@@ -10,34 +10,12 @@ import CartDrawer from './components/CartDrawer';
 import type { CartItem } from './components/CartDrawer';
 import CheckoutForm from './components/CheckoutForm';
 import OrderTracker from './components/OrderTracker';
-import AdminPanel from './components/AdminPanel';
 import CampaignProductSection from './components/CampaignProductSection';
 import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import './App.css';
 
-// Seed Data (Started Empty as per request)
-const DEFAULT_PRODUCTS: Product[] = [];
 
-
-const DEFAULT_ADS: Advertisement[] = [
-  {
-    id: 'ad-1',
-    title: 'Super Summer Toy Sale!',
-    subtitle: 'Flat 40% OFF on educational and creative board toys. Seize the magic!',
-    bgColor: '#7026b9',
-    imageUrl: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=600&q=80',
-    ctaText: 'Shop Sale 🧸',
-  },
-  {
-    id: 'ad-2',
-    title: 'Build Infinite Dreams',
-    subtitle: 'Classic wooden block collections and train track systems for little builders.',
-    bgColor: '#ff6b00',
-    imageUrl: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=600&q=80',
-    ctaText: 'Explore Blocks 🚀',
-  },
-];
 
 // Site Settings Type is in ./types.ts
 export type { SiteSettings };
@@ -58,14 +36,11 @@ const DEFAULT_SETTINGS: SiteSettings = {
 };
 
 function App() {
-  const navigate = useNavigate();
-  const location = useLocation();
 
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [campaign, setCampaign] = useState<Product | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
 
@@ -77,13 +52,7 @@ function App() {
   const [trackingIdParam, setTrackingIdParam] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-  // Authentication State — requires admin sign-in
-  const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(
-    () => localStorage.getItem('kalippetti_admin_session') === 'true'
-  );
 
-  // Is Admin Route Checker
-  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // SHARED DATABASE BLOB IDs FOR SITE-WIDE GLOBAL SYNC
   const SHARED_IDS = {
@@ -100,18 +69,16 @@ function App() {
   useEffect(() => {
     const loadCloudData = async () => {
       try {
-        const [prodRes, adsRes, campRes, ordRes, setRes] = await Promise.all([
+        const [prodRes, adsRes, campRes, setRes] = await Promise.all([
           fetch(getBlobUrl('products')),
           fetch(getBlobUrl('ads')),
           fetch(getBlobUrl('campaign')),
-          fetch(getBlobUrl('orders')),
           fetch(getBlobUrl('settings'))
         ]);
 
         if (prodRes.ok) setProducts(await prodRes.json());
         if (adsRes.ok) setAds(await adsRes.json());
         if (campRes.ok) setCampaign(await campRes.json());
-        if (ordRes.ok) setOrders(await ordRes.json());
         if (setRes.ok) {
           const parsed = await setRes.json();
           setSiteSettings(parsed);
@@ -196,78 +163,7 @@ function App() {
     localStorage.setItem('kalippetti_cart', JSON.stringify(updatedCart));
   };
 
-  // Update Products & sync with Cloud Database
-  const handleUpdateProducts = async (newProducts: Product[]) => {
-    setProducts(newProducts);
-    try {
-      await fetch(getBlobUrl('products'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProducts)
-      });
-    } catch (e) {
-      console.error('Failed to update products remotely:', e);
-    }
-  };
 
-  // Update Ads & sync with Cloud Database
-  const handleUpdateAds = async (newAds: Advertisement[]) => {
-    setAds(newAds);
-    try {
-      await fetch(getBlobUrl('ads'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAds)
-      });
-    } catch (e) {
-      console.error('Failed to update ads remotely:', e);
-    }
-  };
-
-  // Update Orders & sync with Cloud Database
-  const handleUpdateOrders = async (newOrders: any[]) => {
-    setOrders(newOrders);
-    try {
-      await fetch(getBlobUrl('orders'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOrders)
-      });
-    } catch (e) {
-      console.error('Failed to update orders remotely:', e);
-    }
-  };
-
-  // Update Campaign & sync with Cloud Database
-  const handleUpdateCampaign = async (newCampaign: Product | null) => {
-    setCampaign(newCampaign);
-    try {
-      await fetch(getBlobUrl('campaign'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCampaign)
-      });
-    } catch (e) {
-      console.error('Failed to update campaign remotely:', e);
-    }
-  };
-
-  // Update Site Settings & sync with Cloud Database
-  const handleUpdateSiteSettings = async (newSettings: SiteSettings) => {
-    setSiteSettings(newSettings);
-    document.documentElement.style.setProperty('--primary', newSettings.primaryColor);
-    document.documentElement.style.setProperty('--secondary', newSettings.secondaryColor);
-    document.title = `${newSettings.siteName} - Premium Kids Toys Store`;
-    try {
-      await fetch(getBlobUrl('settings'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSettings)
-      });
-    } catch (e) {
-      console.error('Failed to update settings remotely:', e);
-    }
-  };
 
   // Cart operations
   const handleAddToCart = (product: Product, quantity: number = 1) => {
@@ -327,29 +223,11 @@ function App() {
   const handleOrderPlaced = (orderId: string) => {
     // Clear shopping cart
     syncCart([]);
-    // Update local state orders list
-    const updatedOrdersJson = localStorage.getItem('kalippetti_orders');
-    if (updatedOrdersJson) {
-      setOrders(JSON.parse(updatedOrdersJson));
-    }
     // Redirect to tracking page with parameter pre-filled
     setTrackingIdParam(orderId);
     setActivePage('track');
   };
 
-  const handleLoginSuccess = (rememberMe = false) => {
-    setIsLoggedInAdmin(true);
-    if (rememberMe) {
-      localStorage.setItem('kalippetti_admin_session', 'true');
-    }
-  };
-
-  const handleAdminLogout = () => {
-    setIsLoggedInAdmin(false);
-    localStorage.removeItem('kalippetti_admin_session');
-    setActivePage('home');
-    navigate('/');
-  };
 
   // Sync admin panel changes across tabs (orders, products, settings, etc.)
   useEffect(() => {
@@ -363,9 +241,6 @@ function App() {
           case 'kalippetti_ads':
             setAds(JSON.parse(e.newValue));
             break;
-          case 'kalippetti_orders':
-            setOrders(JSON.parse(e.newValue));
-            break;
           case 'kalippetti_campaign':
             setCampaign(JSON.parse(e.newValue));
             break;
@@ -374,11 +249,7 @@ function App() {
             setSiteSettings(parsed);
             if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
             if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
-            break;
           }
-          case 'kalippetti_admin_session':
-            setIsLoggedInAdmin(e.newValue === 'true');
-            break;
         }
       } catch {
         // ignore malformed storage payloads
@@ -405,28 +276,6 @@ function App() {
   // Selected Product for details modal
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
-  // If we are on the totally separate Admin web interface route
-  if (isAdminRoute) {
-    return (
-      <div style={{ background: '#050816', minHeight: '100vh', width: '100%' }}>
-        <AdminPanel
-          isLoggedInAdmin={isLoggedInAdmin}
-          onLoginSuccess={handleLoginSuccess}
-          onLogout={handleAdminLogout}
-          products={products}
-          onUpdateProducts={handleUpdateProducts}
-          ads={ads}
-          onUpdateAds={handleUpdateAds}
-          campaign={campaign}
-          onUpdateCampaign={handleUpdateCampaign}
-          orders={orders}
-          onUpdateOrders={handleUpdateOrders}
-          siteSettings={siteSettings}
-          onUpdateSiteSettings={handleUpdateSiteSettings}
-        />
-      </div>
-    );
-  }
 
   // Otherwise return standard public store interface
   return (
