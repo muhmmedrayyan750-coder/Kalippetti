@@ -13,7 +13,7 @@ export const Footer: React.FC<FooterProps> = ({ setActivePage, siteSettings }) =
     <footer className="site-footer">
       <div className="footer-container">
         {/* Brand Summary */}
-        <div className="footer-brand">
+          <div className="footer-brand">
           <Logo size="sm" text1={siteSettings.logoPart1} text2={siteSettings.logoPart2} />
           <p className="brand-pitch">
             Bringing happiness and magical learning to kids of all ages with high-quality, safe, and engaging toys.

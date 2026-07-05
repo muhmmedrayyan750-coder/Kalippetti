@@ -11,6 +11,7 @@ import type { CartItem } from './components/CartDrawer';
 import CheckoutForm from './components/CheckoutForm';
 import OrderTracker from './components/OrderTracker';
 import CampaignProductSection from './components/CampaignProductSection';
+import AdminPanel from './components/AdminPanel';
 import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import './App.css';
@@ -36,6 +37,32 @@ const DEFAULT_SETTINGS: SiteSettings = {
 };
 
 function App() {
+  // Check if we are on the admin route (supporting pathname /admin as well as hash #/admin)
+  const checkAdminRoute = () => {
+    const path = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+    return path === '/admin' || window.location.hash === '#/admin';
+  };
+
+  const [isAdminRoute, setIsAdminRoute] = useState(checkAdminRoute);
+
+  useEffect(() => {
+    const onChange = () => setIsAdminRoute(checkAdminRoute());
+    window.addEventListener('hashchange', onChange);
+    window.addEventListener('popstate', onChange);
+    // Also check on interval just in case of programmatic React Router style pushes
+    const interval = setInterval(() => {
+      const current = checkAdminRoute();
+      setIsAdminRoute(prev => prev !== current ? current : prev);
+    }, 1000);
+    return () => {
+      window.removeEventListener('hashchange', onChange);
+      window.removeEventListener('popstate', onChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (isAdminRoute) return <AdminPanel />;
+
 
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
@@ -54,39 +81,34 @@ function App() {
 
 
 
-  // SHARED DATABASE BLOB IDs FOR SITE-WIDE GLOBAL SYNC
-  const SHARED_IDS = {
-    products: '019f28a9-101d-74a6-bb98-ae67b9ee5a89',
-    ads: '019f28a9-14c9-7be2-862a-5368eed7b8d7',
-    campaign: '019f28a9-1783-76c0-90cf-331dbde692b7',
-    orders: '019f28a9-1a03-74dc-b778-3ca048b6ae97',
-    settings: '019f28a9-1c33-7476-b57c-60c239729ad9'
+  // Shared Local Storage keys
+  const STORAGE_KEYS = {
+    products: 'kalippetti_products',
+    ads: 'kalippetti_ads',
+    campaign: 'kalippetti_campaign',
+    settings: 'kalippetti_settings'
   };
 
-  const getBlobUrl = (key: keyof typeof SHARED_IDS) => `https://jsonblob.com/api/jsonBlob/${SHARED_IDS[key]}`;
-
-  // Initialize and load database from JSONBlob cloud
+  // Initialize and load database from Local Storage
   useEffect(() => {
-    const loadCloudData = async () => {
+    const loadLocalData = () => {
       try {
-        const [prodRes, adsRes, campRes, setRes] = await Promise.all([
-          fetch(getBlobUrl('products')),
-          fetch(getBlobUrl('ads')),
-          fetch(getBlobUrl('campaign')),
-          fetch(getBlobUrl('settings'))
-        ]);
+        const prodData = localStorage.getItem(STORAGE_KEYS.products);
+        const adsData = localStorage.getItem(STORAGE_KEYS.ads);
+        const campData = localStorage.getItem(STORAGE_KEYS.campaign);
+        const setData = localStorage.getItem(STORAGE_KEYS.settings);
 
-        if (prodRes.ok) setProducts(await prodRes.json());
-        if (adsRes.ok) setAds(await adsRes.json());
-        if (campRes.ok) setCampaign(await campRes.json());
-        if (setRes.ok) {
-          const parsed = await setRes.json();
+        if (prodData) setProducts(JSON.parse(prodData));
+        if (adsData) setAds(JSON.parse(adsData));
+        if (campData) setCampaign(JSON.parse(campData));
+        if (setData) {
+          const parsed = JSON.parse(setData);
           setSiteSettings(parsed);
           if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
           if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
         }
       } catch (err) {
-        console.error('Error loading data from cloud db:', err);
+        console.error('Error loading data from local storage:', err);
       }
     };
 
@@ -104,53 +126,46 @@ function App() {
       setTrackingIdParam(trackId);
     }
 
-    loadCloudData();
+    loadLocalData();
   }, []);
 
-  // Poll cloud data periodically to keep customers synced in real-time
+  // Sync admin panel changes across tabs (orders, products, settings, etc.)
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const handleStorageSync = () => {
+      // Custom event for same-tab updates or proper StorageEvent cross-tab
       try {
-        const [prodRes, adsRes, campRes, setRes] = await Promise.all([
-          fetch(getBlobUrl('products')),
-          fetch(getBlobUrl('ads')),
-          fetch(getBlobUrl('campaign')),
-          fetch(getBlobUrl('settings'))
-        ]);
+        const prodData = localStorage.getItem(STORAGE_KEYS.products);
+        const adsData = localStorage.getItem(STORAGE_KEYS.ads);
+        const campData = localStorage.getItem(STORAGE_KEYS.campaign);
+        const setData = localStorage.getItem(STORAGE_KEYS.settings);
 
-        if (prodRes.ok) {
-          const cloudProducts = await prodRes.ok ? await prodRes.json() : [];
-          if (JSON.stringify(cloudProducts) !== JSON.stringify(products)) {
-            setProducts(cloudProducts);
-          }
+        if (prodData) setProducts(JSON.parse(prodData));
+        if (adsData) setAds(JSON.parse(adsData));
+        if (campData) setCampaign(JSON.parse(campData));
+        if (setData) {
+          const parsed = JSON.parse(setData);
+          setSiteSettings(parsed);
+          if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+          if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
         }
-        if (adsRes.ok) {
-          const cloudAds = await adsRes.json();
-          if (JSON.stringify(cloudAds) !== JSON.stringify(ads)) {
-            setAds(cloudAds);
-          }
-        }
-        if (campRes.ok) {
-          const cloudCampaign = await campRes.json();
-          if (JSON.stringify(cloudCampaign) !== JSON.stringify(campaign)) {
-            setCampaign(cloudCampaign);
-          }
-        }
-        if (setRes.ok) {
-          const cloudSettings = await setRes.json();
-          if (JSON.stringify(cloudSettings) !== JSON.stringify(siteSettings)) {
-            setSiteSettings(cloudSettings);
-            if (cloudSettings.primaryColor) document.documentElement.style.setProperty('--primary', cloudSettings.primaryColor);
-            if (cloudSettings.secondaryColor) document.documentElement.style.setProperty('--secondary', cloudSettings.secondaryColor);
-          }
-        }
-      } catch (err) {
-        console.error('Error polling cloud db:', err);
+      } catch {
+        // ignore malformed storage payloads
       }
-    }, 12000); // Check for global updates every 12 seconds
+    };
 
-    return () => clearInterval(interval);
-  }, [products, siteSettings, ads, campaign]);
+    // Listen to native storage events (from other tabs) and custom events (from admin panel in same tab)
+    window.addEventListener('storage', handleStorageSync);
+    window.addEventListener('local-update', handleStorageSync); // We'll update admin panel to dispatch this
+
+    // We can also poll localstorage every few seconds just to be absolutely sure
+    const interval = setInterval(handleStorageSync, 3000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageSync);
+      window.removeEventListener('local-update', handleStorageSync);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Update document title when settings change
   useEffect(() => {
@@ -229,35 +244,7 @@ function App() {
   };
 
 
-  // Sync admin panel changes across tabs (orders, products, settings, etc.)
-  useEffect(() => {
-    const handleStorageSync = (e: StorageEvent) => {
-      if (!e.key || e.newValue === null) return;
-      try {
-        switch (e.key) {
-          case 'kalippetti_products':
-            setProducts(JSON.parse(e.newValue));
-            break;
-          case 'kalippetti_ads':
-            setAds(JSON.parse(e.newValue));
-            break;
-          case 'kalippetti_campaign':
-            setCampaign(JSON.parse(e.newValue));
-            break;
-          case 'kalippetti_settings': {
-            const parsed = JSON.parse(e.newValue);
-            setSiteSettings(parsed);
-            if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
-            if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
-          }
-        }
-      } catch {
-        // ignore malformed storage payloads
-      }
-    };
-    window.addEventListener('storage', handleStorageSync);
-    return () => window.removeEventListener('storage', handleStorageSync);
-  }, []);
+
 
   // Filtered and Sorted Products list
   const filteredProducts = products.filter((product) => {
