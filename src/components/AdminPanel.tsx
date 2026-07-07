@@ -3,7 +3,7 @@ import {
     BarChart3, Package, ShoppingBag, Image, Settings, Moon, Sun,
     Plus, Trash2, Save, Download, RefreshCw, Eye, Search,
     TrendingUp, Users, DollarSign, Activity, Clock, Shield,
-    AlertTriangle, Megaphone
+    AlertTriangle, Megaphone, Lock, Mail, Fingerprint, ArrowRight, User
 } from 'lucide-react';
 import type { Product } from './ProductCard';
 import type { Advertisement } from './AdCarousel';
@@ -320,195 +320,454 @@ const AdminPanel: React.FC = () => {
         { id: 'activity', label: 'Activity', icon: <Activity size={18} /> },
     ];
 
-
+    // ── Auth Guard — shows login/register screen if not logged in ──
     if (!currentUser) {
         return (
-            <div className={`adm-root auth-page ${theme}`}>
+            <div className={`adm-root auth-page`}>
                 {toast && <div className="adm-toast">{toast}</div>}
 
                 <div className="auth-container">
-                    <div className="auth-card wavy-card">
+                    <div className="auth-card">
                         <div className="auth-logo">
-                            <Shield size={36} />
-                            <h2>Kalippetti Management Portal</h2>
-                            <p>Secure login for administrators, staff, and managers</p>
+                            <Shield className="logo-shield" size={42} />
+                            <h2>Kalippetti management portal</h2>
+                            <p>Secure access to system operations</p>
                         </div>
 
                         <div className="auth-tabs">
-                            <button type="button" className={`auth-tab-btn ${!isRegistering ? 'active' : ''}`} onClick={() => { setIsRegistering(false); setAuthError(''); }}>Login</button>
-                            <button type="button" className={`auth-tab-btn ${isRegistering ? 'active' : ''}`} onClick={() => { setIsRegistering(true); setAuthError(''); }}>Register</button>
+                            <button type="button" className={`auth-tab-btn ${!isRegistering ? 'active' : ''}`} onClick={() => { setIsRegistering(false); setAuthError(''); }}>Sign In</button>
+                            <button type="button" className={`auth-tab-btn ${isRegistering ? 'active' : ''}`} onClick={() => { setIsRegistering(true); setAuthError(''); }}>Register Access</button>
                         </div>
 
-                        {authError && <div className={`auth-alert ${authError.includes('Access Denied') ? 'alert-danger' : 'alert-info'}`}>{authError}</div>}
+                        {authError && (
+                            <div className={`auth-alert ${authError.includes('Access Denied') ? 'alert-danger' : 'alert-info'}`}>
+                                <AlertTriangle size={16} />
+                                <span>{authError}</span>
+                            </div>
+                        )}
 
                         {isRegistering ? (
-                            <form onSubmit={handleRegister} className="form-fields">
+                            <form onSubmit={handleRegister} className="auth-form-fields">
                                 <div>
-                                    <label className="field-label">Full Name</label>
-                                    <input placeholder="Enter full name" value={authName} onChange={e => setAuthName(e.target.value)} required />
+                                    <label className="auth-field-label">Full Name</label>
+                                    <div className="input-with-icon">
+                                        <User className="field-icon" size={16} />
+                                        <input placeholder="Enter full name" value={authName} onChange={e => setAuthName(e.target.value)} required />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="field-label">Email Address</label>
-                                    <input type="email" placeholder="email@example.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                    <label className="auth-field-label">Email Address</label>
+                                    <div className="input-with-icon">
+                                        <Mail className="field-icon" size={16} />
+                                        <input type="email" placeholder="admin@company.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="field-label">Password</label>
-                                    <input type="password" placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                    <label className="auth-field-label">Password</label>
+                                    <div className="input-with-icon">
+                                        <Lock className="field-icon" size={16} />
+                                        <input type="password" placeholder="•••••••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="field-label">Select Access Role</label>
-                                    <select value={authRole} onChange={e => setAuthRole(e.target.value as any)}>
-                                        <option value="user">Customer (Store View Only)</option>
-                                        <option value="staff">Staff Member (Manage Orders)</option>
-                                        <option value="product_manager">Product Manager (Manage Inventory)</option>
-                                        <option value="admin">Administrator (Full Access)</option>
-                                    </select>
+                                    <label className="auth-field-label">Select Access Role</label>
+                                    <div className="input-with-icon">
+                                        <Shield className="field-icon" size={16} />
+                                        <select value={authRole} onChange={e => setAuthRole(e.target.value as any)}>
+                                            <option value="user">Customer (Store View Only)</option>
+                                            <option value="staff">Staff Member (Manage Orders)</option>
+                                            <option value="product_manager">Product Manager (Manage Inventory)</option>
+                                            <option value="admin">Administrator (Full Access)</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="role-restriction-notice">
-                                    ℹ️ <strong>Note:</strong> Admin privileges are reserved for <code>muhmmedrayyan750@gmail.com</code>.
+                                    ℹ️ <strong>System Constraint:</strong> Only <code>muhmmedrayyan750@gmail.com</code> can register as Primary Admin.
                                 </div>
-                                <button type="submit" className="btn-primary">Register Account</button>
+                                <button type="submit" className="auth-submit-btn">
+                                    <span>Register Account</span>
+                                    <ArrowRight size={18} />
+                                </button>
                             </form>
                         ) : (
-                            <form onSubmit={handleLogin} className="form-fields">
+                            <form onSubmit={handleLogin} className="auth-form-fields">
                                 <div>
-                                    <label className="field-label">Email Address</label>
-                                    <input type="email" placeholder="email@example.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                    <label className="auth-field-label">Email Address</label>
+                                    <div className="input-with-icon">
+                                        <Mail className="field-icon" size={16} />
+                                        <input type="email" placeholder="admin@company.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="field-label">Password</label>
-                                    <input type="password" placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <label className="auth-field-label" style={{ margin: 0 }}>Password</label>
+                                        <button type="button" onClick={() => showToast('🔒 Contact muhmmedrayyan750@gmail.com to reset password.')} className="forgot-pass-link-btn">Forgot Password?</button>
+                                    </div>
+                                    <div className="input-with-icon" style={{ marginTop: 8 }}>
+                                        <Lock className="field-icon" size={16} />
+                                        <input type="password" placeholder="•••••••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                    </div>
                                 </div>
-                                <button type="submit" className="btn-primary">Authenticate</button>
+                                <div className="form-options-row">
+                                    <label className="checkbox-container">
+                                        <input type="checkbox" defaultChecked />
+                                        <span>Remember Me</span>
+                                    </label>
+                                </div>
+                                <button type="submit" className="auth-submit-btn">
+                                    <span>Sign In to Dashboard</span>
+                                    <ArrowRight size={18} />
+                                </button>
                             </form>
                         )}
+
+                        <div className="auth-divider"><span>OR</span></div>
+
+                        <button type="button" onClick={() => showToast('ℹ️ Biometric login not configured for this browser instance.')} className="biometric-btn">
+                            <Fingerprint size={18} />
+                            <span>Use Biometric Login</span>
+                        </button>
+
+                        <div className="status-container">
+                            <div className="system-status">
+                                <span className="status-dot"></span>
+                                <span>All Systems Operational</span>
+                            </div>
+                        </div>
 
                         <div className="auth-footer-help">
                             <a href="/">← Return to Storefront</a>
                             <div className="default-acc-hints">
                                 <p><strong>Demo Credentials:</strong></p>
                                 <ul>
-                                    <li>Admin: <code>muhmmedrayyan750@gmail.com</code> / <code>Admin@123</code> (Settings edit permitted)</li>
-                                    <li>PM Account: <code>pm@kalippetti.com</code> / <code>Admin@123</code> (Products edit permitted)</li>
-                                    <li>Staff Account: <code>staff@kalippetti.com</code> / <code>Admin@123</code> (Orders edit permitted)</li>
+                                    <li>Admin: <code>muhmmedrayyan750@gmail.com</code> / <code>Admin@123</code></li>
+                                    <li>PM: <code>pm@kalippetti.com</code> / <code>Admin@123</code></li>
+                                    <li>Staff: <code>staff@kalippetti.com</code> / <code>Admin@123</code></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
+
+                    <footer className="auth-outer-footer">
+                        <span>© 2026 Kalippetti Admin Suite · Secured with AES-256</span>
+                        <div className="footer-links">
+                            <a href="#" onClick={e => e.preventDefault()}>Privacy</a>
+                            <a href="#" onClick={e => e.preventDefault()}>Terms</a>
+                            <a href="#" onClick={e => e.preventDefault()}>Support</a>
+                        </div>
+                    </footer>
                 </div>
 
                 <style>{`
                     .auth-page {
                         display: flex;
+                        flex-direction: column;
                         justify-content: center;
                         align-items: center;
-                        background: var(--ab);
-                        padding: 20px;
+                        background-color: #080c14;
+                        background-image:
+                            radial-gradient(at 50% 0%, rgba(99,102,241,0.18) 0px, transparent 50%),
+                            radial-gradient(at 0% 100%, rgba(124,58,237,0.08) 0px, transparent 50%),
+                            linear-gradient(rgba(255,255,255,0.007) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.007) 1px, transparent 1px);
+                        background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+                        padding: 40px 20px;
                         min-height: 100vh;
                         width: 100%;
+                        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     }
                     .auth-container {
                         width: 100%;
-                        max-width: 480px;
+                        max-width: 460px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
                     }
                     .auth-card {
-                        background: var(--ac);
-                        border: 1px solid var(--abrd);
-                        border-radius: 20px;
-                        padding: 40px;
-                        box-shadow: var(--shadow);
+                        background: rgba(15,22,42,0.7);
+                        backdrop-filter: blur(24px);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        border-radius: 24px;
+                        padding: 44px;
+                        box-shadow: 0 25px 64px -12px rgba(0,0,0,0.6), 0 0 48px rgba(99,102,241,0.12);
                     }
                     .auth-logo {
                         text-align: center;
-                        margin-bottom: 30px;
+                        margin-bottom: 28px;
                     }
-                    .auth-logo svg {
-                        color: var(--as);
-                        margin-bottom: 12px;
+                    .logo-shield {
+                        color: #818cf8;
+                        margin-bottom: 14px;
+                        filter: drop-shadow(0 0 12px rgba(129,140,248,0.5));
                         display: block;
                         margin-left: auto;
                         margin-right: auto;
                     }
                     .auth-logo h2 {
-                        font-size: 1.5rem;
+                        font-size: 1.1rem;
                         font-weight: 800;
+                        color: #f8fafc;
+                        text-transform: uppercase;
+                        letter-spacing: 0.09em;
                         margin-bottom: 6px;
                     }
                     .auth-logo p {
-                        font-size: 0.9rem;
-                        color: var(--asub);
+                        font-size: 0.875rem;
+                        color: #94a3b8;
+                        font-weight: 500;
                     }
                     .auth-tabs {
                         display: flex;
-                        border-bottom: 2px solid var(--abrd);
+                        background: rgba(30,41,59,0.45);
+                        border: 1px solid rgba(255,255,255,0.06);
+                        border-radius: 12px;
+                        padding: 4px;
                         margin-bottom: 24px;
                     }
                     .auth-tab-btn {
                         flex: 1;
-                        padding: 12px;
+                        padding: 10px;
                         background: transparent;
                         border: none;
+                        border-radius: 8px;
                         font-weight: 700;
-                        color: var(--asub);
+                        color: #64748b;
                         cursor: pointer;
                         font-family: inherit;
-                        transition: .2s;
-                        border-bottom: 2px solid transparent;
-                        margin-bottom: -2px;
+                        font-size: 0.875rem;
+                        transition: all 0.2s ease;
                     }
                     .auth-tab-btn.active {
-                        color: var(--as);
-                        border-bottom-color: var(--as);
+                        background: rgba(99,102,241,0.2);
+                        color: #a5b4fc;
                     }
                     .auth-alert {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
                         padding: 12px 16px;
                         border-radius: 12px;
                         font-size: 0.85rem;
                         font-weight: 600;
                         margin-bottom: 20px;
-                        line-height: 1.4;
                     }
-                    .alert-danger {
-                        background: rgba(239, 68, 68, 0.1);
-                        color: #ef4444;
-                        border: 1px solid rgba(239, 68, 68, 0.2);
+                    .alert-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+                    .alert-info   { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+                    .auth-form-fields {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 18px;
                     }
-                    .alert-info {
-                        background: rgba(59, 130, 246, 0.1);
-                        color: #3b82f6;
-                        border: 1px solid rgba(59, 130, 246, 0.2);
+                    .auth-field-label {
+                        display: block;
+                        font-size: 0.75rem;
+                        font-weight: 800;
+                        color: #94a3b8;
+                        text-transform: uppercase;
+                        letter-spacing: 0.07em;
+                        margin-bottom: 8px;
                     }
+                    .input-with-icon {
+                        position: relative;
+                        display: flex;
+                        align-items: center;
+                    }
+                    .input-with-icon input,
+                    .input-with-icon select {
+                        width: 100%;
+                        padding: 13px 16px 13px 42px !important;
+                        border-radius: 12px !important;
+                        border: 1px solid rgba(255,255,255,0.08) !important;
+                        background: #edf2f7 !important;
+                        color: #0f172a !important;
+                        font-size: 0.93rem;
+                        font-weight: 600;
+                        font-family: inherit;
+                        transition: border-color 0.2s, box-shadow 0.2s;
+                        box-sizing: border-box;
+                    }
+                    .input-with-icon input::placeholder { color: #94a3b8; }
+                    .input-with-icon input:focus,
+                    .input-with-icon select:focus {
+                        border-color: #818cf8 !important;
+                        box-shadow: 0 0 0 3px rgba(129,140,248,0.25) !important;
+                        background: #fff !important;
+                        outline: none;
+                    }
+                    .input-with-icon select { cursor: pointer; appearance: none; }
+                    .field-icon {
+                        position: absolute;
+                        left: 14px;
+                        color: #475569;
+                        pointer-events: none;
+                        flex-shrink: 0;
+                    }
+                    .forgot-pass-link-btn {
+                        background: none;
+                        border: none;
+                        color: #818cf8;
+                        cursor: pointer;
+                        font-size: 0.78rem;
+                        font-weight: 700;
+                        padding: 0;
+                        font-family: inherit;
+                    }
+                    .forgot-pass-link-btn:hover { color: #a5b4fc; text-decoration: underline; }
+                    .form-options-row {
+                        display: flex;
+                        align-items: center;
+                        font-size: 0.85rem;
+                    }
+                    .checkbox-container {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        cursor: pointer;
+                        color: #94a3b8;
+                        font-weight: 600;
+                        user-select: none;
+                    }
+                    .checkbox-container input {
+                        width: 16px !important;
+                        height: 16px !important;
+                        padding: 0 !important;
+                        accent-color: #6366f1;
+                        cursor: pointer;
+                    }
+                    .auth-submit-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
+                        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+                        color: #fff;
+                        border: none;
+                        border-radius: 12px;
+                        padding: 14px 28px;
+                        font-weight: 700;
+                        font-size: 0.95rem;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        box-shadow: 0 4px 16px rgba(79,70,229,0.4);
+                        width: 100%;
+                        font-family: inherit;
+                        margin-top: 8px;
+                    }
+                    .auth-submit-btn:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 8px 24px rgba(124,58,237,0.6);
+                    }
+                    .auth-divider {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        margin: 20px 0;
+                        color: rgba(255,255,255,0.18);
+                        font-size: 0.72rem;
+                        font-weight: 700;
+                        letter-spacing: 0.06em;
+                    }
+                    .auth-divider::before, .auth-divider::after {
+                        content: '';
+                        flex: 1;
+                        border-bottom: 1px solid rgba(255,255,255,0.08);
+                    }
+                    .biometric-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
+                        background: rgba(30,41,59,0.35);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        color: #94a3b8;
+                        padding: 12px 18px;
+                        border-radius: 12px;
+                        font-weight: 700;
+                        font-size: 0.875rem;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        width: 100%;
+                        font-family: inherit;
+                    }
+                    .biometric-btn:hover { background: rgba(30,41,59,0.6); color: #e2e8f0; border-color: rgba(255,255,255,0.15); }
+                    .status-container { display: flex; justify-content: center; margin-top: 18px; }
+                    .system-status {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        background: rgba(16,185,129,0.06);
+                        border: 1px solid rgba(16,185,129,0.15);
+                        padding: 8px 18px;
+                        border-radius: 20px;
+                        font-size: 0.75rem;
+                        font-weight: 800;
+                        color: #10b981;
+                        text-transform: uppercase;
+                        letter-spacing: 0.06em;
+                    }
+                    .status-dot {
+                        width: 8px;
+                        height: 8px;
+                        background: #10b981;
+                        border-radius: 50%;
+                        box-shadow: 0 0 8px #10b981;
+                        animation: pulse-status 2s infinite;
+                    }
+                    @keyframes pulse-status { 50% { opacity: 0.25; } }
                     .role-restriction-notice {
-                        background: var(--ainput);
+                        background: rgba(30,41,59,0.35);
                         padding: 10px 14px;
                         border-radius: 10px;
                         font-size: 0.8rem;
-                        color: var(--asub);
-                        border-left: 3px solid var(--as);
-                        margin-bottom: 8px;
+                        color: #94a3b8;
+                        border-left: 3px solid #818cf8;
                     }
                     .auth-footer-help {
                         text-align: center;
                         margin-top: 24px;
-                        font-size: 0.9rem;
+                        font-size: 0.875rem;
                     }
-                    .auth-footer-help a {
-                        color: var(--as);
-                        text-decoration: none;
-                        font-weight: 700;
-                    }
+                    .auth-footer-help > a { color: #818cf8; text-decoration: none; font-weight: 700; }
+                    .auth-footer-help > a:hover { color: #a5b4fc; text-decoration: underline; }
                     .default-acc-hints {
-                        margin-top: 20px;
+                        margin-top: 18px;
                         text-align: left;
-                        font-size: 0.77rem;
-                        color: var(--asub);
-                        border-top: 1px solid var(--abrd);
+                        font-size: 0.75rem;
+                        color: #475569;
+                        border-top: 1px solid rgba(255,255,255,0.07);
                         padding-top: 16px;
                     }
-                    .default-acc-hints ul {
-                        margin: 6px 0 0 0;
-                        padding-left: 16px;
-                        line-height: 1.5;
+                    .default-acc-hints p { color: #64748b; margin-bottom: 6px; font-weight: 700; }
+                    .default-acc-hints ul { margin: 0; padding-left: 16px; line-height: 1.7; }
+                    .default-acc-hints code { color: #a5b4fc; font-size: 0.72rem; }
+                    .auth-outer-footer {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        font-size: 0.75rem;
+                        color: #374151;
+                        padding: 0 4px;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+                    .footer-links { display: flex; gap: 16px; }
+                    .footer-links a { color: #374151; text-decoration: none; }
+                    .footer-links a:hover { color: #6b7280; }
+                    .adm-toast {
+                        position: fixed;
+                        bottom: 28px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: #1e293b;
+                        color: #f1f5f9;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        padding: 12px 24px;
+                        border-radius: 12px;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        z-index: 9999;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+                        white-space: nowrap;
                     }
                 `}</style>
             </div>
