@@ -8,15 +8,10 @@ import {
 import type { Product } from './ProductCard';
 import type { Advertisement } from './AdCarousel';
 import type { SiteSettings } from '../types';
+import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from '../lib/persistence';
 
 // ── Shared Storage Keys ──
-const STORAGE_KEYS = {
-    products: 'kalippetti_products',
-    ads: 'kalippetti_ads',
-    campaign: 'kalippetti_campaign',
-    orders: 'kalippetti_orders',
-    settings: 'kalippetti_settings'
-};
+const STORAGE_KEYS = SHOP_STORAGE_KEYS;
 
 interface Order {
     id: string; customerName: string; phone: string; altPhone?: string;
@@ -50,10 +45,21 @@ const AdminPanel: React.FC = () => {
     const [searchQ, setSearchQ] = useState('');
     const [toast, setToast] = useState('');
 
-    // Product form
+    // Authentication States
+    const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: 'admin' | 'staff' | 'product_manager' | 'user' } | null>(() => {
+        const saved = localStorage.getItem('kalippetti_session_user');
+        return saved ? JSON.parse(saved) : null;
+    });
+    const [authEmail, setAuthEmail] = useState('');
+    const [authPassword, setAuthPassword] = useState('');
+    const [authName, setAuthName] = useState('');
+    const [authRole, setAuthRole] = useState<'admin' | 'staff' | 'product_manager' | 'user'>('user');
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [authError, setAuthError] = useState('');
+
+    // Active forms
     const emptyProd: Product = { id: '', title: '', description: '', price: 0, originalPrice: 0, category: '', imageUrl: '', rating: 4.5, reviewsCount: 10, inStock: true };
     const [prodForm, setProdForm] = useState<Product>({ ...emptyProd });
-    // Ad form
     const emptyAd: Advertisement = { id: '', title: '', subtitle: '', imageUrl: '', bgColor: '#ff6b00', ctaText: 'Shop Now 🧸' };
     const [adForm, setAdForm] = useState<Advertisement>({ ...emptyAd });
 
@@ -63,38 +69,163 @@ const AdminPanel: React.FC = () => {
 
     const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-    // ── Load all local data ──
+    // Get all registered users from localStorage or initialize with default accounts
+    const getUsers = (): any[] => {
+        const saved = localStorage.getItem('kalippetti_users');
+        if (!saved) {
+            const defaults = [
+                { name: 'Super Admin', email: 'muhmmedrayyan750@gmail.com', password: 'Admin@123', role: 'admin' },
+                { name: 'Backup Admin', email: 'admin@kalippetti.com', password: 'Admin@123', role: 'admin' },
+                { name: 'Staff Member', email: 'staff@kalippetti.com', password: 'Admin@123', role: 'staff' },
+                { name: 'Product Manager', email: 'pm@kalippetti.com', password: 'Admin@123', role: 'product_manager' }
+            ];
+            localStorage.setItem('kalippetti_users', JSON.stringify(defaults));
+            return defaults;
+        }
+        return JSON.parse(saved);
+    };
+
+    // ── Load all data ──
     const loadAll = useCallback(async () => {
         setLoading(true);
         try {
-            const pR = localStorage.getItem(STORAGE_KEYS.products);
-            const aR = localStorage.getItem(STORAGE_KEYS.ads);
-            const cR = localStorage.getItem(STORAGE_KEYS.campaign);
-            const oR = localStorage.getItem(STORAGE_KEYS.orders);
-            const sR = localStorage.getItem(STORAGE_KEYS.settings);
+            const [pR, aR, cR, oR, sR] = await Promise.all([
+                readStoredData<Product[]>(STORAGE_KEYS.products),
+                readStoredData<Advertisement[]>(STORAGE_KEYS.ads),
+                readStoredData<Product | null>(STORAGE_KEYS.campaign, null),
+                readStoredData<Order[]>(STORAGE_KEYS.orders, []),
+                readStoredData<SiteSettings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS),
+            ]);
 
-            if (pR) setProducts(JSON.parse(pR));
-            if (aR) setAds(JSON.parse(aR));
-            if (cR) setCampaign(JSON.parse(cR));
-            if (oR) setOrders(JSON.parse(oR));
-            if (sR) setSettings(JSON.parse(sR));
-            log('Local data loaded successfully', 'success');
-        } catch { log('Failed to load local data', 'danger'); }
+            if (pR) setProducts(pR);
+            if (aR) setAds(aR);
+            if (cR) setCampaign(cR);
+            if (oR) setOrders(oR);
+            if (sR) setSettings(sR);
+            log('Shared database synced successfully', 'success');
+        } catch { log('Failed to sync shared database', 'danger'); }
         setLoading(false);
     }, [log]);
 
-    useEffect(() => { loadAll(); }, [loadAll]);
+    useEffect(() => {
+        if (currentUser) {
+            loadAll();
+        }
+    }, [currentUser, loadAll]);
 
-    // ── Save helper ──
+    // ── Save Helper ──
     const saveData = async (key: keyof typeof STORAGE_KEYS, data: unknown) => {
         setSaving(true);
         try {
-            localStorage.setItem(STORAGE_KEYS[key], JSON.stringify(data));
-            window.dispatchEvent(new Event('storage')); // Notify other tabs
-            log(`Saved ${key} locally`, 'success');
+            await writeStoredData(STORAGE_KEYS[key], data);
+            log(`Saved ${key} to shared storage`, 'success');
             showToast(`✅ ${key} saved successfully!`);
         } catch { log(`Failed to save ${key}`, 'danger'); showToast(`❌ Failed to save ${key}`); }
         setSaving(false);
+    };
+
+    // ── Authentication Actions ──
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        setAuthError('');
+        const userList = getUsers();
+        const found = userList.find(u => u.email.toLowerCase() === authEmail.trim().toLowerCase() && u.password === authPassword);
+
+        if (!found) {
+            setAuthError('Invalid email or password.');
+            return;
+        }
+
+        if (found.role === 'user') {
+            setAuthError('Access Denied: Customers cannot access the management panel.');
+            return;
+        }
+
+        const sessionUser = { name: found.name, email: found.email, role: found.role };
+        setCurrentUser(sessionUser);
+        localStorage.setItem('kalippetti_session_user', JSON.stringify(sessionUser));
+        log(`User ${found.name} logged in as ${found.role}`, 'success');
+        showToast(`Welcome back, ${found.name}!`);
+    };
+
+    const handleRegister = (e: React.FormEvent) => {
+        e.preventDefault();
+        setAuthError('');
+
+        if (!authName.trim() || !authEmail.trim() || !authPassword) {
+            setAuthError('Please fill out all fields.');
+            return;
+        }
+
+        if (authPassword.length < 6) {
+            setAuthError('Password must be at least 6 characters.');
+            return;
+        }
+
+        const emailLower = authEmail.trim().toLowerCase();
+
+        // Enforce admin restrictions
+        if (authRole === 'admin' && emailLower !== 'muhmmedrayyan750@gmail.com' && emailLower !== 'admin@kalippetti.com') {
+            setAuthError('Access Denied: Only the official administrator email (muhmmedrayyan750@gmail.com) can register as Admin.');
+            return;
+        }
+
+        let roleToSave = authRole;
+        if (emailLower === 'muhmmedrayyan750@gmail.com') {
+            roleToSave = 'admin';
+        }
+
+        const userList = getUsers();
+        if (userList.some(u => u.email.toLowerCase() === emailLower)) {
+            setAuthError('An account with this email already exists.');
+            return;
+        }
+
+        const newUser = { name: authName.trim(), email: emailLower, password: authPassword, role: roleToSave };
+        const updated = [...userList, newUser];
+        localStorage.setItem('kalippetti_users', JSON.stringify(updated));
+
+        // Sync user list helper
+        const userSync = async () => {
+            try {
+                const payload: Record<string, unknown> = {};
+                const keys = ['products', 'ads', 'campaign', 'orders', 'settings', 'users'];
+                keys.forEach(k => {
+                    const val = localStorage.getItem(`kalippetti_${k}`);
+                    payload[k] = val ? JSON.parse(val) : (k === 'users' ? updated : null);
+                });
+                await fetch('https://jsonblob.com/api/jsonBlob/019f3bdb-faa6-7f7f-8f01-68d01c3219b0', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        userSync();
+
+        if (roleToSave === 'user') {
+            showToast('Registration successful! Please login.');
+            setAuthEmail(emailLower);
+            setAuthPassword('');
+            setIsRegistering(false);
+            setAuthError('Customer account created. Note: customers cannot log in to the admin panel - please log in as Staff, Product Manager, or Administrator.');
+        } else {
+            const sessionUser = { name: newUser.name, email: newUser.email, role: newUser.role };
+            setCurrentUser(sessionUser);
+            localStorage.setItem('kalippetti_session_user', JSON.stringify(sessionUser));
+            log(`User ${newUser.name} registered and logged in as ${newUser.role}`, 'success');
+            showToast(`Registered and logged in as ${newUser.role}!`);
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('kalippetti_session_user');
+        setCurrentUser(null);
+        setAuthPassword('');
+        log('Logged out successfully', 'info');
+        showToast('Logged out successfully');
     };
 
     // ── Dark mode ──
@@ -102,6 +233,7 @@ const AdminPanel: React.FC = () => {
 
     // ── Backup ──
     const downloadBackup = () => {
+        if (currentUser?.role !== 'admin') return showToast('❌ Backup restricted to Admin only');
         const backup = { products, ads, campaign, orders, settings, exportedAt: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -111,6 +243,7 @@ const AdminPanel: React.FC = () => {
 
     // ── Products CRUD ──
     const addProduct = async () => {
+        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to products');
         if (!prodForm.title || !prodForm.price) return showToast('❌ Title & Price required');
         const np = { ...prodForm, id: prodForm.id || `prod-${Date.now()}` };
         const updated = prodForm.id && products.find(p => p.id === prodForm.id)
@@ -119,6 +252,7 @@ const AdminPanel: React.FC = () => {
         setProdForm({ ...emptyProd }); log(`Product "${np.title}" saved`, 'success');
     };
     const deleteProduct = async (id: string) => {
+        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to products');
         const updated = products.filter(p => p.id !== id);
         setProducts(updated); await saveData('products', updated);
         log(`Product deleted`, 'warning');
@@ -126,6 +260,7 @@ const AdminPanel: React.FC = () => {
 
     // ── Ads CRUD ──
     const addAd = async () => {
+        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to banners');
         if (!adForm.title) return showToast('❌ Title required');
         const na = { ...adForm, id: adForm.id || `ad-${Date.now()}` };
         const updated = adForm.id && ads.find(a => a.id === adForm.id)
@@ -134,26 +269,35 @@ const AdminPanel: React.FC = () => {
         setAdForm({ ...emptyAd }); log(`Ad "${na.title}" saved`, 'success');
     };
     const deleteAd = async (id: string) => {
+        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to banners');
         const updated = ads.filter(a => a.id !== id);
         setAds(updated); await saveData('ads', updated); log('Ad deleted', 'warning');
     };
 
     // ── Orders ──
     const updateOrderStatus = async (id: string, status: string) => {
+        if (currentUser?.role === 'product_manager') return showToast('❌ Product Manager has read-only access to orders');
         const updated = orders.map(o => o.id === id ? { ...o, status } : o);
         setOrders(updated); await saveData('orders', updated);
         log(`Order ${id} → ${status}`, 'info');
     };
     const deleteOrder = async (id: string) => {
+        if (currentUser?.role === 'product_manager') return showToast('❌ Product Manager has read-only access to orders');
         const updated = orders.filter(o => o.id !== id);
         setOrders(updated); await saveData('orders', updated); log(`Order ${id} deleted`, 'warning');
     };
 
     // ── Settings ──
-    const saveSettings = async () => { await saveData('settings', settings); };
+    const saveSettings = async () => {
+        if (currentUser?.role !== 'admin') return showToast('❌ Settings can only be saved by administrator');
+        await saveData('settings', settings);
+    };
 
     // ── Campaign ──
-    const saveCampaign = async () => { await saveData('campaign', campaign); log('Campaign saved', 'success'); };
+    const saveCampaign = async () => {
+        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to campaigns');
+        await saveData('campaign', campaign); log('Campaign saved', 'success');
+    };
 
     // ── Stats ──
     const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
@@ -176,6 +320,201 @@ const AdminPanel: React.FC = () => {
         { id: 'activity', label: 'Activity', icon: <Activity size={18} /> },
     ];
 
+
+    if (!currentUser) {
+        return (
+            <div className={`adm-root auth-page ${theme}`}>
+                {toast && <div className="adm-toast">{toast}</div>}
+
+                <div className="auth-container">
+                    <div className="auth-card wavy-card">
+                        <div className="auth-logo">
+                            <Shield size={36} />
+                            <h2>Kalippetti Management Portal</h2>
+                            <p>Secure login for administrators, staff, and managers</p>
+                        </div>
+
+                        <div className="auth-tabs">
+                            <button type="button" className={`auth-tab-btn ${!isRegistering ? 'active' : ''}`} onClick={() => { setIsRegistering(false); setAuthError(''); }}>Login</button>
+                            <button type="button" className={`auth-tab-btn ${isRegistering ? 'active' : ''}`} onClick={() => { setIsRegistering(true); setAuthError(''); }}>Register</button>
+                        </div>
+
+                        {authError && <div className={`auth-alert ${authError.includes('Access Denied') ? 'alert-danger' : 'alert-info'}`}>{authError}</div>}
+
+                        {isRegistering ? (
+                            <form onSubmit={handleRegister} className="form-fields">
+                                <div>
+                                    <label className="field-label">Full Name</label>
+                                    <input placeholder="Enter full name" value={authName} onChange={e => setAuthName(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <label className="field-label">Email Address</label>
+                                    <input type="email" placeholder="email@example.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <label className="field-label">Password</label>
+                                    <input type="password" placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <label className="field-label">Select Access Role</label>
+                                    <select value={authRole} onChange={e => setAuthRole(e.target.value as any)}>
+                                        <option value="user">Customer (Store View Only)</option>
+                                        <option value="staff">Staff Member (Manage Orders)</option>
+                                        <option value="product_manager">Product Manager (Manage Inventory)</option>
+                                        <option value="admin">Administrator (Full Access)</option>
+                                    </select>
+                                </div>
+                                <div className="role-restriction-notice">
+                                    ℹ️ <strong>Note:</strong> Admin privileges are reserved for <code>muhmmedrayyan750@gmail.com</code>.
+                                </div>
+                                <button type="submit" className="btn-primary">Register Account</button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleLogin} className="form-fields">
+                                <div>
+                                    <label className="field-label">Email Address</label>
+                                    <input type="email" placeholder="email@example.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                </div>
+                                <div>
+                                    <label className="field-label">Password</label>
+                                    <input type="password" placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                </div>
+                                <button type="submit" className="btn-primary">Authenticate</button>
+                            </form>
+                        )}
+
+                        <div className="auth-footer-help">
+                            <a href="/">← Return to Storefront</a>
+                            <div className="default-acc-hints">
+                                <p><strong>Demo Credentials:</strong></p>
+                                <ul>
+                                    <li>Admin: <code>muhmmedrayyan750@gmail.com</code> / <code>Admin@123</code> (Settings edit permitted)</li>
+                                    <li>PM Account: <code>pm@kalippetti.com</code> / <code>Admin@123</code> (Products edit permitted)</li>
+                                    <li>Staff Account: <code>staff@kalippetti.com</code> / <code>Admin@123</code> (Orders edit permitted)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <style>{`
+                    .auth-page {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background: var(--ab);
+                        padding: 20px;
+                        min-height: 100vh;
+                        width: 100%;
+                    }
+                    .auth-container {
+                        width: 100%;
+                        max-width: 480px;
+                    }
+                    .auth-card {
+                        background: var(--ac);
+                        border: 1px solid var(--abrd);
+                        border-radius: 20px;
+                        padding: 40px;
+                        box-shadow: var(--shadow);
+                    }
+                    .auth-logo {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    .auth-logo svg {
+                        color: var(--as);
+                        margin-bottom: 12px;
+                        display: block;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    .auth-logo h2 {
+                        font-size: 1.5rem;
+                        font-weight: 800;
+                        margin-bottom: 6px;
+                    }
+                    .auth-logo p {
+                        font-size: 0.9rem;
+                        color: var(--asub);
+                    }
+                    .auth-tabs {
+                        display: flex;
+                        border-bottom: 2px solid var(--abrd);
+                        margin-bottom: 24px;
+                    }
+                    .auth-tab-btn {
+                        flex: 1;
+                        padding: 12px;
+                        background: transparent;
+                        border: none;
+                        font-weight: 700;
+                        color: var(--asub);
+                        cursor: pointer;
+                        font-family: inherit;
+                        transition: .2s;
+                        border-bottom: 2px solid transparent;
+                        margin-bottom: -2px;
+                    }
+                    .auth-tab-btn.active {
+                        color: var(--as);
+                        border-bottom-color: var(--as);
+                    }
+                    .auth-alert {
+                        padding: 12px 16px;
+                        border-radius: 12px;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        margin-bottom: 20px;
+                        line-height: 1.4;
+                    }
+                    .alert-danger {
+                        background: rgba(239, 68, 68, 0.1);
+                        color: #ef4444;
+                        border: 1px solid rgba(239, 68, 68, 0.2);
+                    }
+                    .alert-info {
+                        background: rgba(59, 130, 246, 0.1);
+                        color: #3b82f6;
+                        border: 1px solid rgba(59, 130, 246, 0.2);
+                    }
+                    .role-restriction-notice {
+                        background: var(--ainput);
+                        padding: 10px 14px;
+                        border-radius: 10px;
+                        font-size: 0.8rem;
+                        color: var(--asub);
+                        border-left: 3px solid var(--as);
+                        margin-bottom: 8px;
+                    }
+                    .auth-footer-help {
+                        text-align: center;
+                        margin-top: 24px;
+                        font-size: 0.9rem;
+                    }
+                    .auth-footer-help a {
+                        color: var(--as);
+                        text-decoration: none;
+                        font-weight: 700;
+                    }
+                    .default-acc-hints {
+                        margin-top: 20px;
+                        text-align: left;
+                        font-size: 0.77rem;
+                        color: var(--asub);
+                        border-top: 1px solid var(--abrd);
+                        padding-top: 16px;
+                    }
+                    .default-acc-hints ul {
+                        margin: 6px 0 0 0;
+                        padding-left: 16px;
+                        line-height: 1.5;
+                    }
+                `}</style>
+            </div>
+        );
+    }
+
     return (
         <div className={`adm-root ${theme}`}>
             {toast && <div className="adm-toast">{toast}</div>}
@@ -185,6 +524,17 @@ const AdminPanel: React.FC = () => {
                 <div className="adm-sidebar-logo">
                     <Shield size={24} /> <span>Kalippetti</span><small>Admin</small>
                 </div>
+
+                <div className="adm-sidebar-profile">
+                    <div className="profile-photo">
+                        {currentUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="profile-info">
+                        <span className="profile-name">{currentUser.name}</span>
+                        <span className={`profile-role role-${currentUser.role}`}>{currentUser.role.replace('_', ' ')}</span>
+                    </div>
+                </div>
+
                 <nav className="adm-nav">
                     {tabs.map(t => (
                         <button key={t.id} className={`adm-nav-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
@@ -196,8 +546,11 @@ const AdminPanel: React.FC = () => {
                     <button className="adm-dark-toggle" onClick={() => setDark(!dark)}>
                         {dark ? <Sun size={18} /> : <Moon size={18} />}<span>{dark ? 'Light' : 'Dark'} Mode</span>
                     </button>
-                    <button className="adm-backup-btn" onClick={downloadBackup}><Download size={16} /><span>Backup</span></button>
+                    {currentUser?.role === 'admin' && (
+                        <button className="adm-backup-btn" onClick={downloadBackup}><Download size={16} /><span>Backup</span></button>
+                    )}
                     <a href="/" className="adm-visit-btn"><Eye size={16} /><span>View Site</span></a>
+                    <button className="adm-logout-btn" onClick={handleLogout}>Logout</button>
                 </div>
             </aside>
 
@@ -247,6 +600,12 @@ const AdminPanel: React.FC = () => {
                     {/* ═══ ORDERS ═══ */}
                     {tab === 'orders' && (
                         <div className="adm-orders">
+                            {currentUser?.role === 'product_manager' && (
+                                <div className="rbac-warning-banner">
+                                    <AlertTriangle size={18} />
+                                    <span><strong>Read-Only Mode:</strong> Product managers are not authorized to update order status or delete transactions.</span>
+                                </div>
+                            )}
                             <div className="orders-toolbar">
                                 <div className="search-box"><Search size={16} /><input placeholder="Search orders..." value={searchQ} onChange={e => setSearchQ(e.target.value)} /></div>
                                 <span className="orders-count">{filteredOrders.length} orders</span>
@@ -262,14 +621,16 @@ const AdminPanel: React.FC = () => {
                                                 <td>{o.items?.map((it, i) => <div key={i} className="item-line">{it.quantity}× {it.title}</div>)}</td>
                                                 <td><strong>₹{o.total}</strong></td>
                                                 <td>
-                                                    <select value={o.status} onChange={e => updateOrderStatus(o.id, e.target.value)} className={`status-sel st-${o.status?.toLowerCase()}`}>
+                                                    <select disabled={currentUser?.role === 'product_manager'} value={o.status} onChange={e => updateOrderStatus(o.id, e.target.value)} className={`status-sel st-${o.status?.toLowerCase()}`}>
                                                         {['Placed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map(s => <option key={s}>{s}</option>)}
                                                     </select>
                                                 </td>
                                                 <td>
                                                     <div className="order-actions">
                                                         <a href={`https://wa.me/91${o.phone}`} target="_blank" rel="noreferrer" className="oa-btn oa-green" title="WhatsApp">💬</a>
-                                                        <button onClick={() => deleteOrder(o.id)} className="oa-btn oa-red" title="Delete">🗑</button>
+                                                        {currentUser?.role !== 'product_manager' && (
+                                                            <button onClick={() => deleteOrder(o.id)} className="oa-btn oa-red" title="Delete">🗑</button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -284,24 +645,30 @@ const AdminPanel: React.FC = () => {
                     {/* ═══ PRODUCTS ═══ */}
                     {tab === 'products' && (
                         <div className="adm-products">
+                            {currentUser?.role === 'staff' && (
+                                <div className="rbac-warning-banner">
+                                    <AlertTriangle size={18} />
+                                    <span><strong>Read-Only Mode:</strong> Staff members are not authorized to add, edit, or delete items in the product catalog.</span>
+                                </div>
+                            )}
                             <div className="prod-grid">
                                 <div className="form-card">
                                     <h3><Plus size={18} /> {prodForm.id ? 'Edit' : 'Add'} Product</h3>
                                     <div className="form-fields">
-                                        <input placeholder="Title *" value={prodForm.title} onChange={e => setProdForm({ ...prodForm, title: e.target.value })} />
-                                        <textarea placeholder="Description" value={prodForm.description} onChange={e => setProdForm({ ...prodForm, description: e.target.value })} />
+                                        <input disabled={currentUser?.role === 'staff'} placeholder="Title *" value={prodForm.title} onChange={e => setProdForm({ ...prodForm, title: e.target.value })} />
+                                        <textarea disabled={currentUser?.role === 'staff'} placeholder="Description" value={prodForm.description} onChange={e => setProdForm({ ...prodForm, description: e.target.value })} />
                                         <div className="form-row-2">
-                                            <input type="number" placeholder="Price *" value={prodForm.price || ''} onChange={e => setProdForm({ ...prodForm, price: +e.target.value })} />
-                                            <input type="number" placeholder="Original Price" value={prodForm.originalPrice || ''} onChange={e => setProdForm({ ...prodForm, originalPrice: +e.target.value })} />
+                                            <input disabled={currentUser?.role === 'staff'} type="number" placeholder="Price *" value={prodForm.price || ''} onChange={e => setProdForm({ ...prodForm, price: +e.target.value })} />
+                                            <input disabled={currentUser?.role === 'staff'} type="number" placeholder="Original Price" value={prodForm.originalPrice || ''} onChange={e => setProdForm({ ...prodForm, originalPrice: +e.target.value })} />
                                         </div>
                                         <div className="form-row-2">
-                                            <input placeholder="Category" value={prodForm.category} onChange={e => setProdForm({ ...prodForm, category: e.target.value })} />
-                                            <input type="number" step="0.1" placeholder="Rating" value={prodForm.rating || ''} onChange={e => setProdForm({ ...prodForm, rating: +e.target.value })} />
+                                            <input disabled={currentUser?.role === 'staff'} placeholder="Category" value={prodForm.category} onChange={e => setProdForm({ ...prodForm, category: e.target.value })} />
+                                            <input disabled={currentUser?.role === 'staff'} type="number" step="0.1" placeholder="Rating" value={prodForm.rating || ''} onChange={e => setProdForm({ ...prodForm, rating: +e.target.value })} />
                                         </div>
-                                        <input placeholder="Image URL" value={prodForm.imageUrl} onChange={e => setProdForm({ ...prodForm, imageUrl: e.target.value })} />
-                                        <label className="checkbox-row"><input type="checkbox" checked={prodForm.inStock} onChange={e => setProdForm({ ...prodForm, inStock: e.target.checked })} /> In Stock</label>
+                                        <input disabled={currentUser?.role === 'staff'} placeholder="Image URL" value={prodForm.imageUrl} onChange={e => setProdForm({ ...prodForm, imageUrl: e.target.value })} />
+                                        <label className="checkbox-row"><input disabled={currentUser?.role === 'staff'} type="checkbox" checked={prodForm.inStock} onChange={e => setProdForm({ ...prodForm, inStock: e.target.checked })} /> In Stock</label>
                                         <div className="form-actions">
-                                            <button className="btn-primary" onClick={addProduct}><Save size={16} /> Save</button>
+                                            <button disabled={currentUser?.role === 'staff'} className="btn-primary" onClick={addProduct}><Save size={16} /> Save</button>
                                             {prodForm.id && <button className="btn-ghost" onClick={() => setProdForm({ ...emptyProd })}>Cancel</button>}
                                         </div>
                                     </div>
@@ -314,8 +681,10 @@ const AdminPanel: React.FC = () => {
                                                 <div className="li-img">{p.imageUrl ? <img src={p.imageUrl} alt="" /> : '📦'}</div>
                                                 <div className="li-info"><strong>{p.title}</strong><small>{p.category} · ₹{p.price}</small></div>
                                                 <div className="li-actions">
-                                                    <button onClick={() => setProdForm(p)} title="Edit">✏️</button>
-                                                    <button onClick={() => deleteProduct(p.id)} title="Delete"><Trash2 size={14} /></button>
+                                                    <button onClick={() => { if (currentUser?.role === 'staff') { showToast('❌ Staff can only view products'); } else { setProdForm(p); } }} title="Edit">✏️</button>
+                                                    {currentUser?.role !== 'staff' && (
+                                                        <button onClick={() => deleteProduct(p.id)} title="Delete"><Trash2 size={14} /></button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -329,19 +698,25 @@ const AdminPanel: React.FC = () => {
                     {/* ═══ BANNERS ═══ */}
                     {tab === 'ads' && (
                         <div className="adm-ads">
+                            {currentUser?.role === 'staff' && (
+                                <div className="rbac-warning-banner">
+                                    <AlertTriangle size={18} />
+                                    <span><strong>Read-Only Mode:</strong> Staff members are not authorized to modify store banners.</span>
+                                </div>
+                            )}
                             <div className="prod-grid">
                                 <div className="form-card">
                                     <h3><Plus size={18} /> {adForm.id ? 'Edit' : 'Add'} Banner</h3>
                                     <div className="form-fields">
-                                        <input placeholder="Title *" value={adForm.title} onChange={e => setAdForm({ ...adForm, title: e.target.value })} />
-                                        <input placeholder="Subtitle" value={adForm.subtitle} onChange={e => setAdForm({ ...adForm, subtitle: e.target.value })} />
-                                        <input placeholder="Image URL" value={adForm.imageUrl} onChange={e => setAdForm({ ...adForm, imageUrl: e.target.value })} />
+                                        <input disabled={currentUser?.role === 'staff'} placeholder="Title *" value={adForm.title} onChange={e => setAdForm({ ...adForm, title: e.target.value })} />
+                                        <input disabled={currentUser?.role === 'staff'} placeholder="Subtitle" value={adForm.subtitle} onChange={e => setAdForm({ ...adForm, subtitle: e.target.value })} />
+                                        <input disabled={currentUser?.role === 'staff'} placeholder="Image URL" value={adForm.imageUrl} onChange={e => setAdForm({ ...adForm, imageUrl: e.target.value })} />
                                         <div className="form-row-2">
-                                            <div><label className="field-label">Background Color</label><input type="color" value={adForm.bgColor} onChange={e => setAdForm({ ...adForm, bgColor: e.target.value })} /></div>
-                                            <input placeholder="CTA Text" value={adForm.ctaText || ''} onChange={e => setAdForm({ ...adForm, ctaText: e.target.value })} />
+                                            <div><label className="field-label">Background Color</label><input disabled={currentUser?.role === 'staff'} type="color" value={adForm.bgColor} onChange={e => setAdForm({ ...adForm, bgColor: e.target.value })} /></div>
+                                            <input disabled={currentUser?.role === 'staff'} placeholder="CTA Text" value={adForm.ctaText || ''} onChange={e => setAdForm({ ...adForm, ctaText: e.target.value })} />
                                         </div>
                                         <div className="form-actions">
-                                            <button className="btn-primary" onClick={addAd}><Save size={16} /> Save</button>
+                                            <button disabled={currentUser?.role === 'staff'} className="btn-primary" onClick={addAd}><Save size={16} /> Save</button>
                                             {adForm.id && <button className="btn-ghost" onClick={() => setAdForm({ ...emptyAd })}>Cancel</button>}
                                         </div>
                                     </div>
@@ -354,8 +729,10 @@ const AdminPanel: React.FC = () => {
                                                 <div className="li-color" style={{ background: a.bgColor }}></div>
                                                 <div className="li-info"><strong>{a.title}</strong><small>{a.subtitle}</small></div>
                                                 <div className="li-actions">
-                                                    <button onClick={() => setAdForm(a)} title="Edit">✏️</button>
-                                                    <button onClick={() => deleteAd(a.id)} title="Delete"><Trash2 size={14} /></button>
+                                                    <button onClick={() => { if (currentUser?.role === 'staff') { showToast('❌ Staff can only view banners'); } else { setAdForm(a); } }} title="Edit">✏️</button>
+                                                    {currentUser?.role !== 'staff' && (
+                                                        <button onClick={() => deleteAd(a.id)} title="Delete"><Trash2 size={14} /></button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -369,21 +746,27 @@ const AdminPanel: React.FC = () => {
                     {/* ═══ CAMPAIGN ═══ */}
                     {tab === 'campaign' && (
                         <div className="adm-campaign">
+                            {currentUser?.role === 'staff' && (
+                                <div className="rbac-warning-banner">
+                                    <AlertTriangle size={18} />
+                                    <span><strong>Read-Only Mode:</strong> Staff members are not authorized to modify campaigns.</span>
+                                </div>
+                            )}
                             <div className="form-card" style={{ maxWidth: 600 }}>
                                 <h3><Megaphone size={18} /> Campaign Combo Product</h3>
                                 <p className="field-hint">This special product appears on the homepage as a highlighted deal.</p>
                                 <div className="form-fields">
-                                    <input placeholder="Title" value={campaign?.title || ''} onChange={e => setCampaign({ ...campaign!, title: e.target.value })} />
-                                    <textarea placeholder="Description" value={campaign?.description || ''} onChange={e => setCampaign({ ...campaign!, description: e.target.value })} />
+                                    <input disabled={currentUser?.role === 'staff'} placeholder="Title" value={campaign?.title || ''} onChange={e => setCampaign({ ...campaign!, title: e.target.value })} />
+                                    <textarea disabled={currentUser?.role === 'staff'} placeholder="Description" value={campaign?.description || ''} onChange={e => setCampaign({ ...campaign!, description: e.target.value })} />
                                     <div className="form-row-2">
-                                        <input type="number" placeholder="Price" value={campaign?.price || ''} onChange={e => setCampaign({ ...campaign!, price: +e.target.value })} />
-                                        <input type="number" placeholder="Original Price" value={campaign?.originalPrice || ''} onChange={e => setCampaign({ ...campaign!, originalPrice: +e.target.value })} />
+                                        <input disabled={currentUser?.role === 'staff'} type="number" placeholder="Price" value={campaign?.price || ''} onChange={e => setCampaign({ ...campaign!, price: +e.target.value })} />
+                                        <input disabled={currentUser?.role === 'staff'} type="number" placeholder="Original Price" value={campaign?.originalPrice || ''} onChange={e => setCampaign({ ...campaign!, originalPrice: +e.target.value })} />
                                     </div>
-                                    <input placeholder="Image URL" value={campaign?.imageUrl || ''} onChange={e => setCampaign({ ...campaign!, imageUrl: e.target.value })} />
-                                    <input placeholder="Category" value={campaign?.category || ''} onChange={e => setCampaign({ ...campaign!, category: e.target.value })} />
+                                    <input disabled={currentUser?.role === 'staff'} placeholder="Image URL" value={campaign?.imageUrl || ''} onChange={e => setCampaign({ ...campaign!, imageUrl: e.target.value })} />
+                                    <input disabled={currentUser?.role === 'staff'} placeholder="Category" value={campaign?.category || ''} onChange={e => setCampaign({ ...campaign!, category: e.target.value })} />
                                     <div className="form-actions">
-                                        <button className="btn-primary" onClick={saveCampaign}><Save size={16} /> Save Campaign</button>
-                                        <button className="btn-ghost" onClick={async () => { setCampaign(null); await saveData('campaign', null); }}>Clear</button>
+                                        <button disabled={currentUser?.role === 'staff'} className="btn-primary" onClick={saveCampaign}><Save size={16} /> Save Campaign</button>
+                                        <button disabled={currentUser?.role === 'staff'} className="btn-ghost" onClick={async () => { setCampaign(null); await saveData('campaign', null); }}>Clear</button>
                                     </div>
                                 </div>
                             </div>
@@ -393,28 +776,34 @@ const AdminPanel: React.FC = () => {
                     {/* ═══ SETTINGS ═══ */}
                     {tab === 'settings' && (
                         <div className="adm-settings">
+                            {currentUser?.role !== 'admin' && (
+                                <div className="rbac-warning-banner">
+                                    <AlertTriangle size={18} />
+                                    <span><strong>Access Denied:</strong> Only the primary administrator (muhmmedrayyan750@gmail.com) can adjust settings, pricing, shipping, or branding colors.</span>
+                                </div>
+                            )}
                             <div className="form-card" style={{ maxWidth: 700 }}>
                                 <h3><Settings size={18} /> Site Settings</h3>
                                 <div className="form-fields">
                                     <div className="form-row-2">
-                                        <div><label className="field-label">Site Name</label><input value={settings.siteName} onChange={e => setSettings({ ...settings, siteName: e.target.value })} /></div>
-                                        <div><label className="field-label">Contact Number</label><input value={settings.contactNumber} onChange={e => setSettings({ ...settings, contactNumber: e.target.value })} /></div>
+                                        <div><label className="field-label">Site Name</label><input disabled={currentUser?.role !== 'admin'} value={settings.siteName} onChange={e => setSettings({ ...settings, siteName: e.target.value })} /></div>
+                                        <div><label className="field-label">Contact Number</label><input disabled={currentUser?.role !== 'admin'} value={settings.contactNumber} onChange={e => setSettings({ ...settings, contactNumber: e.target.value })} /></div>
                                     </div>
                                     <div className="form-row-2">
-                                        <div><label className="field-label">Logo Part 1</label><input value={settings.logoPart1} onChange={e => setSettings({ ...settings, logoPart1: e.target.value })} /></div>
-                                        <div><label className="field-label">Logo Part 2</label><input value={settings.logoPart2} onChange={e => setSettings({ ...settings, logoPart2: e.target.value })} /></div>
+                                        <div><label className="field-label">Logo Part 1</label><input disabled={currentUser?.role !== 'admin'} value={settings.logoPart1} onChange={e => setSettings({ ...settings, logoPart1: e.target.value })} /></div>
+                                        <div><label className="field-label">Logo Part 2</label><input disabled={currentUser?.role !== 'admin'} value={settings.logoPart2} onChange={e => setSettings({ ...settings, logoPart2: e.target.value })} /></div>
                                     </div>
-                                    <div><label className="field-label">Official Email</label><input value={settings.officialEmail} onChange={e => setSettings({ ...settings, officialEmail: e.target.value })} /></div>
-                                    <div><label className="field-label">Welcome Message</label><textarea value={settings.welcomeMessage} onChange={e => setSettings({ ...settings, welcomeMessage: e.target.value })} /></div>
+                                    <div><label className="field-label">Official Email</label><input disabled={currentUser?.role !== 'admin'} value={settings.officialEmail} onChange={e => setSettings({ ...settings, officialEmail: e.target.value })} /></div>
+                                    <div><label className="field-label">Welcome Message</label><textarea disabled={currentUser?.role !== 'admin'} value={settings.welcomeMessage} onChange={e => setSettings({ ...settings, welcomeMessage: e.target.value })} /></div>
                                     <div className="form-row-2">
-                                        <div><label className="field-label">Primary Color</label><input type="color" value={settings.primaryColor} onChange={e => setSettings({ ...settings, primaryColor: e.target.value })} style={{ height: 44 }} /></div>
-                                        <div><label className="field-label">Secondary Color</label><input type="color" value={settings.secondaryColor} onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })} style={{ height: 44 }} /></div>
+                                        <div><label className="field-label">Primary Color</label><input disabled={currentUser?.role !== 'admin'} type="color" value={settings.primaryColor} onChange={e => setSettings({ ...settings, primaryColor: e.target.value })} style={{ height: 44 }} /></div>
+                                        <div><label className="field-label">Secondary Color</label><input disabled={currentUser?.role !== 'admin'} type="color" value={settings.secondaryColor} onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })} style={{ height: 44 }} /></div>
                                     </div>
                                     <div className="form-row-2">
-                                        <div><label className="field-label">Shipping Charge (₹)</label><input type="number" value={settings.shippingCharge} onChange={e => setSettings({ ...settings, shippingCharge: +e.target.value })} /></div>
-                                        <div><label className="field-label">Free Shipping Threshold (₹)</label><input type="number" value={settings.freeShippingThreshold} onChange={e => setSettings({ ...settings, freeShippingThreshold: +e.target.value })} /></div>
+                                        <div><label className="field-label">Shipping Charge (₹)</label><input disabled={currentUser?.role !== 'admin'} type="number" value={settings.shippingCharge} onChange={e => setSettings({ ...settings, shippingCharge: +e.target.value })} /></div>
+                                        <div><label className="field-label">Free Shipping Threshold (₹)</label><input disabled={currentUser?.role !== 'admin'} type="number" value={settings.freeShippingThreshold} onChange={e => setSettings({ ...settings, freeShippingThreshold: +e.target.value })} /></div>
                                     </div>
-                                    <div className="form-actions"><button className="btn-primary" onClick={saveSettings}><Save size={16} /> Save Settings</button></div>
+                                    <div className="form-actions"><button disabled={currentUser?.role !== 'admin'} className="btn-primary" onClick={saveSettings}><Save size={16} /> Save Settings</button></div>
                                 </div>
                             </div>
                         </div>
@@ -588,6 +977,92 @@ const AdminPanel: React.FC = () => {
           .stat-grid{grid-template-columns:1fr}
           .form-row-2{grid-template-columns:1fr}
           .adm-content{padding:16px}
+        }
+        
+        /* ═══ ROLE-BASED ACCESS CONTROL ═══ */
+        .rbac-warning-banner {
+          background: rgba(245, 158, 11, 0.1);
+          color: #d97706;
+          border: 1px solid rgba(245, 158, 11, 0.25);
+          padding: 12px 20px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+        .adm-sidebar-profile {
+          padding: 16px 20px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-bottom: 1px solid var(--abrd);
+          margin-bottom: 10px;
+        }
+        .profile-photo {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: var(--as);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 1.1rem;
+          flex-shrink: 0;
+        }
+        .profile-info {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+        .profile-name {
+          font-weight: 700;
+          font-size: 0.88rem;
+          color: var(--at);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .profile-role {
+          font-size: 0.7rem;
+          color: var(--asub);
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .profile-role.role-admin {
+          color: #ef4444 !important;
+        }
+        .profile-role.role-staff {
+          color: #3b82f6 !important;
+        }
+        .profile-role.role-product_manager {
+          color: #10b981 !important;
+        }
+        .adm-logout-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          border-radius: 10px;
+          font-size: .9rem;
+          font-weight: 700;
+          color: #ef4444;
+          transition: all .2s;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+          text-align: left;
+          margin-top: 10px;
+        }
+        .adm-logout-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
         }
       `}</style>
         </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingBag, ArrowLeft, Send } from 'lucide-react';
 import type { CartItem } from './CartDrawer';
 import type { SiteSettings } from '../types';
+import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from '../lib/persistence';
 
 interface CheckoutFormProps {
   cartItems: CartItem[];
@@ -33,7 +34,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     0
   );
 
-  const shippingCharge = subtotal >= 499 ? 0 : 40;
+  const shippingCharge = subtotal >= (siteSettings.freeShippingThreshold || 499) ? 0 : siteSettings.shippingCharge;
   const total = subtotal + shippingCharge;
 
   const handleChange = (
@@ -69,7 +70,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     return Object.keys(tempErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -108,11 +109,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       date: orderDate,
     };
 
-    // 3. Save Order to localStorage (accumulate)
-    const existingOrdersJson = localStorage.getItem('kalippetti_orders');
-    const existingOrders = existingOrdersJson ? JSON.parse(existingOrdersJson) : [];
-    existingOrders.push(newOrder);
-    localStorage.setItem('kalippetti_orders', JSON.stringify(existingOrders));
+    // 3. Save Order to shared storage (accumulate)
+    const existingOrders = await readStoredData<any[]>(SHOP_STORAGE_KEYS.orders, []);
+    const updatedOrders = [...(existingOrders || []), newOrder];
+    await writeStoredData(SHOP_STORAGE_KEYS.orders, updatedOrders);
 
     // 4. Format WhatsApp Message
     const shopUrl = window.location.origin;

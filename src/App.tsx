@@ -14,6 +14,7 @@ import CampaignProductSection from './components/CampaignProductSection';
 import AdminPanel from './components/AdminPanel';
 import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
+import { readStoredData, SHOP_STORAGE_KEYS } from './lib/persistence';
 import './App.css';
 
 
@@ -49,7 +50,6 @@ function App() {
     const onChange = () => setIsAdminRoute(checkAdminRoute());
     window.addEventListener('hashchange', onChange);
     window.addEventListener('popstate', onChange);
-    // Also check on interval just in case of programmatic React Router style pushes
     const interval = setInterval(() => {
       const current = checkAdminRoute();
       setIsAdminRoute(prev => prev !== current ? current : prev);
@@ -60,9 +60,6 @@ function App() {
       clearInterval(interval);
     };
   }, []);
-
-  if (isAdminRoute) return <AdminPanel />;
-
 
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
@@ -81,44 +78,35 @@ function App() {
 
 
 
-  // Shared Local Storage keys
-  const STORAGE_KEYS = {
-    products: 'kalippetti_products',
-    ads: 'kalippetti_ads',
-    campaign: 'kalippetti_campaign',
-    settings: 'kalippetti_settings'
-  };
-
-  // Initialize and load database from Local Storage
+  // Initialize and load catalog data from shared storage
   useEffect(() => {
-    const loadLocalData = () => {
+    const loadLocalData = async () => {
       try {
-        const prodData = localStorage.getItem(STORAGE_KEYS.products);
-        const adsData = localStorage.getItem(STORAGE_KEYS.ads);
-        const campData = localStorage.getItem(STORAGE_KEYS.campaign);
-        const setData = localStorage.getItem(STORAGE_KEYS.settings);
+        const [prodData, adsData, campData, setData] = await Promise.all([
+          readStoredData<Product[]>(SHOP_STORAGE_KEYS.products),
+          readStoredData<Advertisement[]>(SHOP_STORAGE_KEYS.ads),
+          readStoredData<Product | null>(SHOP_STORAGE_KEYS.campaign, null),
+          readStoredData<SiteSettings>(SHOP_STORAGE_KEYS.settings, DEFAULT_SETTINGS),
+        ]);
 
-        if (prodData) setProducts(JSON.parse(prodData));
-        if (adsData) setAds(JSON.parse(adsData));
-        if (campData) setCampaign(JSON.parse(campData));
+        if (prodData) setProducts(prodData);
+        if (adsData) setAds(adsData);
+        if (campData) setCampaign(campData);
         if (setData) {
-          const parsed = JSON.parse(setData);
-          setSiteSettings(parsed);
-          if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
-          if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
+          setSiteSettings(setData);
+          if (setData.primaryColor) document.documentElement.style.setProperty('--primary', setData.primaryColor);
+          if (setData.secondaryColor) document.documentElement.style.setProperty('--secondary', setData.secondaryColor);
         }
       } catch (err) {
-        console.error('Error loading data from local storage:', err);
+        console.error('Error loading data from shared storage:', err);
       }
     };
 
-    // Also load local cart
-    const savedCart = localStorage.getItem('kalippetti_cart');
+    const savedCart = localStorage.getItem(SHOP_STORAGE_KEYS.cart);
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
 
-    // URL Tracking Parameter Check
     const params = new URLSearchParams(window.location.search);
     const trackId = params.get('track');
     if (trackId) {
@@ -126,39 +114,37 @@ function App() {
       setTrackingIdParam(trackId);
     }
 
-    loadLocalData();
+    void loadLocalData();
   }, []);
 
-  // Sync admin panel changes across tabs (orders, products, settings, etc.)
-  useEffect(() => {
-    const handleStorageSync = () => {
-      // Custom event for same-tab updates or proper StorageEvent cross-tab
-      try {
-        const prodData = localStorage.getItem(STORAGE_KEYS.products);
-        const adsData = localStorage.getItem(STORAGE_KEYS.ads);
-        const campData = localStorage.getItem(STORAGE_KEYS.campaign);
-        const setData = localStorage.getItem(STORAGE_KEYS.settings);
+  // Sync admin panel changes across tabs and sessions
+  const handleStorageSync = async () => {
+    try {
+      const [prodData, adsData, campData, setData] = await Promise.all([
+        readStoredData<Product[]>(SHOP_STORAGE_KEYS.products),
+        readStoredData<Advertisement[]>(SHOP_STORAGE_KEYS.ads),
+        readStoredData<Product | null>(SHOP_STORAGE_KEYS.campaign, null),
+        readStoredData<SiteSettings>(SHOP_STORAGE_KEYS.settings, DEFAULT_SETTINGS),
+      ]);
 
-        if (prodData) setProducts(JSON.parse(prodData));
-        if (adsData) setAds(JSON.parse(adsData));
-        if (campData) setCampaign(JSON.parse(campData));
-        if (setData) {
-          const parsed = JSON.parse(setData);
-          setSiteSettings(parsed);
-          if (parsed.primaryColor) document.documentElement.style.setProperty('--primary', parsed.primaryColor);
-          if (parsed.secondaryColor) document.documentElement.style.setProperty('--secondary', parsed.secondaryColor);
-        }
-      } catch {
-        // ignore malformed storage payloads
+      if (prodData) setProducts(prodData);
+      if (adsData) setAds(adsData);
+      if (campData) setCampaign(campData);
+      if (setData) {
+        setSiteSettings(setData);
+        if (setData.primaryColor) document.documentElement.style.setProperty('--primary', setData.primaryColor);
+        if (setData.secondaryColor) document.documentElement.style.setProperty('--secondary', setData.secondaryColor);
       }
-    };
+    } catch {
+      // ignore malformed storage payloads
+    }
+  };
 
-    // Listen to native storage events (from other tabs) and custom events (from admin panel in same tab)
+  useEffect(() => {
     window.addEventListener('storage', handleStorageSync);
-    window.addEventListener('local-update', handleStorageSync); // We'll update admin panel to dispatch this
+    window.addEventListener('local-update', handleStorageSync);
 
-    // We can also poll localstorage every few seconds just to be absolutely sure
-    const interval = setInterval(handleStorageSync, 3000);
+    const interval = setInterval(() => { void handleStorageSync(); }, 3000);
 
     return () => {
       window.removeEventListener('storage', handleStorageSync);
@@ -175,7 +161,7 @@ function App() {
   // Sync Cart to LocalStorage (Cart remains private to each visitor's browser/session)
   const syncCart = (updatedCart: CartItem[]) => {
     setCart(updatedCart);
-    localStorage.setItem('kalippetti_cart', JSON.stringify(updatedCart));
+    localStorage.setItem(SHOP_STORAGE_KEYS.cart, JSON.stringify(updatedCart));
   };
 
 
@@ -263,6 +249,8 @@ function App() {
   // Selected Product for details modal
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
+
+  if (isAdminRoute) return <AdminPanel />;
 
   // Otherwise return standard public store interface
   return (
