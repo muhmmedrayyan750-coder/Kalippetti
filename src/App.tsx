@@ -267,7 +267,37 @@ function App() {
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
             {/* Promo slider */}
-            <AdCarousel ads={ads} setActivePage={setActivePage} />
+            <div className="home-web-banner wavy-card">
+            <div className="web-banner-content">
+              <div className="web-banner-copy">
+                <span className="banner-pill">Web Exclusive</span>
+                <h2>All-in-One Football Kit</h2>
+                <p>Grab the complete football gear set for kids — ball, gloves, socks, shin guards, and training bag all in one deal.</p>
+                <div className="web-banner-actions">
+                  <button className="btn btn-primary" onClick={() => setActivePage('shop')}>
+                    Shop Now
+                  </button>
+                  <a
+                    className="banner-secondary-link"
+                    href={`https://wa.me/91${siteSettings.contactNumber}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Contact on WhatsApp
+                  </a>
+                </div>
+              </div>
+              <div className="web-banner-image">
+                <img
+                  src={ads?.[0]?.imageUrl || 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1000&q=80'}
+                  alt="Football Kit"
+                  onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1000&q=80'; }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <AdCarousel ads={ads} setActivePage={setActivePage} />
 
             {/* Campaign Combo Section */}
             {campaign && (
