@@ -3,7 +3,6 @@ import { getFirestore, doc, getDoc, setDoc, type Firestore } from 'firebase/fire
 
 export const SHOP_STORAGE_KEYS = {
   products: 'kalippetti_products',
-  ads: 'kalippetti_ads',
   campaign: 'kalippetti_campaign',
   orders: 'kalippetti_orders',
   settings: 'kalippetti_settings',
@@ -75,7 +74,7 @@ export const pullFromRemote = async (): Promise<void> => {
 export const pushToRemote = async (): Promise<void> => {
   try {
     const payload: Record<string, unknown> = {};
-    const keys = ['products', 'ads', 'campaign', 'orders', 'settings', 'users'];
+    const keys = ['products', 'campaign', 'orders', 'settings', 'users'];
     keys.forEach(k => {
       const val = localStorage.getItem(`kalippetti_${k}`);
       payload[k] = val ? JSON.parse(val) : null;

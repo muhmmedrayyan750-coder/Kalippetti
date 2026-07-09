@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    BarChart3, Package, ShoppingBag, Image, Settings, Moon, Sun,
+    BarChart3, Package, ShoppingBag, Settings, Moon, Sun,
     Plus, Trash2, Save, Download, RefreshCw, Eye, Search,
-    TrendingUp, Users, DollarSign, Activity, Clock, Shield,
+    Users, DollarSign, Activity, Clock, Shield,
     AlertTriangle, Megaphone, Lock, Mail, Fingerprint, ArrowRight, User
 } from 'lucide-react';
 import type { Product } from './ProductCard';
-import type { Advertisement } from './AdCarousel';
 import type { SiteSettings } from '../types';
 import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from '../lib/persistence';
 
@@ -35,7 +34,6 @@ const AdminPanel: React.FC = () => {
     const [dark, setDark] = useState(() => localStorage.getItem('admin_dark') === '1');
     const [tab, setTab] = useState('dashboard');
     const [products, setProducts] = useState<Product[]>([]);
-    const [ads, setAds] = useState<Advertisement[]>([]);
     const [campaign, setCampaign] = useState<Product | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
@@ -60,8 +58,7 @@ const AdminPanel: React.FC = () => {
     // Active forms
     const emptyProd: Product = { id: '', title: '', description: '', price: 0, originalPrice: 0, category: '', imageUrl: '', rating: 4.5, reviewsCount: 10, inStock: true };
     const [prodForm, setProdForm] = useState<Product>({ ...emptyProd });
-    const emptyAd: Advertisement = { id: '', title: '', subtitle: '', imageUrl: '', bgColor: '#ff6b00', ctaText: 'Shop Now 🧸' };
-    const [adForm, setAdForm] = useState<Advertisement>({ ...emptyAd });
+    
 
     const log = useCallback((action: string, type: ActivityLog['type'] = 'info') => {
         setLogs(p => [{ time: new Date().toLocaleTimeString(), action, type }, ...p].slice(0, 50));
@@ -89,16 +86,14 @@ const AdminPanel: React.FC = () => {
     const loadAll = useCallback(async () => {
         setLoading(true);
         try {
-            const [pR, aR, cR, oR, sR] = await Promise.all([
+            const [pR, cR, oR, sR] = await Promise.all([
                 readStoredData<Product[]>(STORAGE_KEYS.products),
-                readStoredData<Advertisement[]>(STORAGE_KEYS.ads),
                 readStoredData<Product | null>(STORAGE_KEYS.campaign, null),
                 readStoredData<Order[]>(STORAGE_KEYS.orders, []),
                 readStoredData<SiteSettings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS),
             ]);
 
             if (pR) setProducts(pR);
-            if (aR) setAds(aR);
             if (cR) setCampaign(cR);
             if (oR) setOrders(oR);
             if (sR) setSettings(sR);
@@ -189,7 +184,7 @@ const AdminPanel: React.FC = () => {
         const userSync = async () => {
             try {
                 const payload: Record<string, unknown> = {};
-                const keys = ['products', 'ads', 'campaign', 'orders', 'settings', 'users'];
+                const keys = ['products', 'campaign', 'orders', 'settings', 'users'];
                 keys.forEach(k => {
                     const val = localStorage.getItem(`kalippetti_${k}`);
                     payload[k] = val ? JSON.parse(val) : (k === 'users' ? updated : null);
@@ -234,7 +229,7 @@ const AdminPanel: React.FC = () => {
     // ── Backup ──
     const downloadBackup = () => {
         if (currentUser?.role !== 'admin') return showToast('❌ Backup restricted to Admin only');
-        const backup = { products, ads, campaign, orders, settings, exportedAt: new Date().toISOString() };
+        const backup = { products, campaign, orders, settings, exportedAt: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = `kalippetti-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
@@ -258,21 +253,7 @@ const AdminPanel: React.FC = () => {
         log(`Product deleted`, 'warning');
     };
 
-    // ── Ads CRUD ──
-    const addAd = async () => {
-        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to banners');
-        if (!adForm.title) return showToast('❌ Title required');
-        const na = { ...adForm, id: adForm.id || `ad-${Date.now()}` };
-        const updated = adForm.id && ads.find(a => a.id === adForm.id)
-            ? ads.map(a => a.id === na.id ? na : a) : [...ads, na];
-        setAds(updated); await saveData('ads', updated);
-        setAdForm({ ...emptyAd }); log(`Ad "${na.title}" saved`, 'success');
-    };
-    const deleteAd = async (id: string) => {
-        if (currentUser?.role === 'staff') return showToast('❌ Staff account has read-only access to banners');
-        const updated = ads.filter(a => a.id !== id);
-        setAds(updated); await saveData('ads', updated); log('Ad deleted', 'warning');
-    };
+    
 
     // ── Orders ──
     const updateOrderStatus = async (id: string, status: string) => {
@@ -314,7 +295,6 @@ const AdminPanel: React.FC = () => {
         { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
         { id: 'orders', label: 'Orders', icon: <ShoppingBag size={18} /> },
         { id: 'products', label: 'Products', icon: <Package size={18} /> },
-        { id: 'ads', label: 'Banners', icon: <Image size={18} /> },
         { id: 'campaign', label: 'Campaign', icon: <Megaphone size={18} /> },
         { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
         { id: 'activity', label: 'Activity', icon: <Activity size={18} /> },
@@ -832,7 +812,7 @@ const AdminPanel: React.FC = () => {
                                 <div className="stat-card sc-orange"><ShoppingBag size={28} /><div><small>Total Orders</small><h2>{orders.length}</h2></div></div>
                                 <div className="stat-card sc-blue"><Package size={28} /><div><small>Products</small><h2>{products.length}</h2></div></div>
                                 <div className="stat-card sc-red"><AlertTriangle size={28} /><div><small>Pending</small><h2>{pendingOrders}</h2></div></div>
-                                <div className="stat-card sc-green"><TrendingUp size={28} /><div><small>Banners</small><h2>{ads.length}</h2></div></div>
+                                
                                 <div className="stat-card sc-teal"><Users size={28} /><div><small>Unique Customers</small><h2>{new Set(orders.map(o => o.phone)).size}</h2></div></div>
                             </div>
                             <div className="dash-row">
@@ -954,53 +934,7 @@ const AdminPanel: React.FC = () => {
                         </div>
                     )}
 
-                    {/* ═══ BANNERS ═══ */}
-                    {tab === 'ads' && (
-                        <div className="adm-ads">
-                            {currentUser?.role === 'staff' && (
-                                <div className="rbac-warning-banner">
-                                    <AlertTriangle size={18} />
-                                    <span><strong>Read-Only Mode:</strong> Staff members are not authorized to modify store banners.</span>
-                                </div>
-                            )}
-                            <div className="prod-grid">
-                                <div className="form-card">
-                                    <h3><Plus size={18} /> {adForm.id ? 'Edit' : 'Add'} Banner</h3>
-                                    <div className="form-fields">
-                                        <input disabled={currentUser?.role === 'staff'} placeholder="Title *" value={adForm.title} onChange={e => setAdForm({ ...adForm, title: e.target.value })} />
-                                        <input disabled={currentUser?.role === 'staff'} placeholder="Subtitle" value={adForm.subtitle} onChange={e => setAdForm({ ...adForm, subtitle: e.target.value })} />
-                                        <input disabled={currentUser?.role === 'staff'} placeholder="Image URL" value={adForm.imageUrl} onChange={e => setAdForm({ ...adForm, imageUrl: e.target.value })} />
-                                        <div className="form-row-2">
-                                            <div><label className="field-label">Background Color</label><input disabled={currentUser?.role === 'staff'} type="color" value={adForm.bgColor} onChange={e => setAdForm({ ...adForm, bgColor: e.target.value })} /></div>
-                                            <input disabled={currentUser?.role === 'staff'} placeholder="CTA Text" value={adForm.ctaText || ''} onChange={e => setAdForm({ ...adForm, ctaText: e.target.value })} />
-                                        </div>
-                                        <div className="form-actions">
-                                            <button disabled={currentUser?.role === 'staff'} className="btn-primary" onClick={addAd}><Save size={16} /> Save</button>
-                                            {adForm.id && <button className="btn-ghost" onClick={() => setAdForm({ ...emptyAd })}>Cancel</button>}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="list-card">
-                                    <h3><Image size={18} /> All Banners ({ads.length})</h3>
-                                    <div className="item-list">
-                                        {ads.map(a => (
-                                            <div key={a.id} className="list-item">
-                                                <div className="li-color" style={{ background: a.bgColor }}></div>
-                                                <div className="li-info"><strong>{a.title}</strong><small>{a.subtitle}</small></div>
-                                                <div className="li-actions">
-                                                    <button onClick={() => { if (currentUser?.role === 'staff') { showToast('❌ Staff can only view banners'); } else { setAdForm(a); } }} title="Edit">✏️</button>
-                                                    {currentUser?.role !== 'staff' && (
-                                                        <button onClick={() => deleteAd(a.id)} title="Delete"><Trash2 size={14} /></button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {ads.length === 0 && <p className="empty-hint">No banners yet</p>}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    
 
                     {/* ═══ CAMPAIGN ═══ */}
                     {tab === 'campaign' && (

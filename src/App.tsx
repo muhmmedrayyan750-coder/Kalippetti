@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   secondaryColor: '#ff6b00',
   instagramUrl: 'https://instagram.com',
   facebookUrl: 'https://facebook.com',
-  homeBannerUrl: '/football-banner.jpg',
+  
   shippingCharge: 60,
   freeShippingThreshold: 999,
 };
@@ -262,24 +262,7 @@ function App() {
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
-            {/* Homepage banner (configurable via site settings) */}
-            {siteSettings.homeBannerUrl && (
-              <div className="home-ad-banner wavy-card">
-                <div className="home-ad-inner">
-                  <div className="home-ad-copy">
-                    <h2>All-in-One Football Kit — Special Offer</h2>
-                    <p>Complete football gear set for kids. Limited stock — grab it now!</p>
-                    <div className="home-ad-actions">
-                      <button className="btn btn-primary" onClick={() => setActivePage('shop')}>Shop Now</button>
-                      <a className="btn btn-light" href={`https://wa.me/91${siteSettings.contactNumber}`} target="_blank" rel="noreferrer">WhatsApp Us</a>
-                    </div>
-                  </div>
-                  <div className="home-ad-image">
-                    <img src={siteSettings.homeBannerUrl} alt="Homepage Ad" onError={(e) => { e.currentTarget.src = '/football-banner.jpg'; }} />
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* No homepage ads or banners */}
 
             {/* Campaign Combo Section */}
             {campaign && (
