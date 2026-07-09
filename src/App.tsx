@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
-import AdCarousel from './components/AdCarousel';
-import type { Advertisement } from './components/AdCarousel';
+// Ads and carousel removed (site uses no on-site ads)
 import ProductCard from './components/ProductCard';
 import type { Product } from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
@@ -62,7 +61,7 @@ function App() {
 
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
-  const [ads, setAds] = useState<Advertisement[]>([]);
+  
   const [campaign, setCampaign] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
@@ -83,15 +82,13 @@ function App() {
   useEffect(() => {
     const loadLocalData = async () => {
       try {
-        const [prodData, adsData, campData, setData] = await Promise.all([
+        const [prodData, campData, setData] = await Promise.all([
           readStoredData<Product[]>(SHOP_STORAGE_KEYS.products),
-          readStoredData<Advertisement[]>(SHOP_STORAGE_KEYS.ads),
           readStoredData<Product | null>(SHOP_STORAGE_KEYS.campaign, null),
           readStoredData<SiteSettings>(SHOP_STORAGE_KEYS.settings, DEFAULT_SETTINGS),
         ]);
 
         if (prodData) setProducts(prodData);
-        if (adsData) setAds(adsData);
         if (campData) setCampaign(campData);
         if (setData) {
           setSiteSettings(setData);
@@ -115,15 +112,13 @@ function App() {
   // Sync admin panel changes across tabs and sessions
   const handleStorageSync = async () => {
     try {
-      const [prodData, adsData, campData, setData] = await Promise.all([
+      const [prodData, campData, setData] = await Promise.all([
         readStoredData<Product[]>(SHOP_STORAGE_KEYS.products),
-        readStoredData<Advertisement[]>(SHOP_STORAGE_KEYS.ads),
         readStoredData<Product | null>(SHOP_STORAGE_KEYS.campaign, null),
         readStoredData<SiteSettings>(SHOP_STORAGE_KEYS.settings, DEFAULT_SETTINGS),
       ]);
 
       if (prodData) setProducts(prodData);
-      if (adsData) setAds(adsData);
       if (campData) setCampaign(campData);
       if (setData) {
         setSiteSettings(setData);
@@ -266,38 +261,7 @@ function App() {
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
-            {/* Promo slider */}
-            <div className="home-web-banner wavy-card">
-            <div className="web-banner-content">
-              <div className="web-banner-copy">
-                <span className="banner-pill">Web Exclusive</span>
-                <h2>All-in-One Football Kit</h2>
-                <p>Grab the complete football gear set for kids — ball, gloves, socks, shin guards, and training bag all in one deal.</p>
-                <div className="web-banner-actions">
-                  <button className="btn btn-primary" onClick={() => setActivePage('shop')}>
-                    Shop Now
-                  </button>
-                  <a
-                    className="banner-secondary-link"
-                    href={`https://wa.me/91${siteSettings.contactNumber}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Contact on WhatsApp
-                  </a>
-                </div>
-              </div>
-              <div className="web-banner-image">
-                <img
-                  src={ads?.[0]?.imageUrl || 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1000&q=80'}
-                  alt="Football Kit"
-                  onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1000&q=80'; }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <AdCarousel ads={ads} setActivePage={setActivePage} />
+            {/* Promo slider removed (no ads) */}
 
             {/* Campaign Combo Section */}
             {campaign && (
