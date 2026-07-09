@@ -16,6 +16,32 @@
   gap: 60px;
 }
 
+.home-ad-banner {
+  width: 100%;
+  padding: 18px 22px;
+  background: linear-gradient(90deg, rgba(112,38,185,0.06), rgba(255,107,0,0.06));
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.home-ad-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-ad-copy h2 { margin: 0 0 6px 0; font-size: 1.6rem; }
+.home-ad-copy p { margin: 0 0 10px 0; color: var(--neutral-gray); }
+.home-ad-actions { display:flex; gap:12px; }
+.home-ad-image img { max-width: 420px; width: 100%; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.12); }
+
+@media (max-width: 880px) {
+  .home-ad-inner { flex-direction: column; text-align:center; }
+  .home-ad-image img { max-width: 300px; }
+}
+
 
 
 .section-title-wrapper {

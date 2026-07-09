@@ -11,6 +11,7 @@ export interface SiteSettings {
     secondaryColor: string;
     instagramUrl?: string;
     facebookUrl?: string;
+    homeBannerUrl?: string;
     shippingCharge: number;
     freeShippingThreshold: number;
 }
