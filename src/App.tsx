@@ -12,7 +12,7 @@ import CampaignProductSection from './components/CampaignProductSection';
 import AdminPanel from './components/AdminPanel';
 import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
-import { readStoredData, SHOP_STORAGE_KEYS } from './lib/persistence';
+import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from './lib/persistence';
 import './App.css';
 
 
@@ -89,7 +89,20 @@ function App() {
           readStoredData<SiteSettings>(SHOP_STORAGE_KEYS.settings, DEFAULT_SETTINGS),
         ]);
 
-        if (prodData) setProducts(prodData);
+        if (prodData && prodData.length > 0) {
+          setProducts(prodData);
+        } else {
+          try {
+            const resp = await fetch('/data/seedProducts.json');
+            if (resp.ok) {
+              const seed = await resp.json();
+              setProducts(seed);
+              await writeStoredData('products', seed);
+            }
+          } catch (err) {
+            // ignore
+          }
+        }
         if (campData) setCampaign(campData);
         if (setData) {
           setSiteSettings(setData);
