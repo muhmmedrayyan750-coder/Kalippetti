@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ShoppingBag, Truck, Menu, X } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 import Logo from './Logo';
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   toggleCart: () => void;
+  onContactClick: () => void;
   siteSettings: {
     logoPart1: string;
     logoPart2: string;
@@ -22,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   searchTerm,
   setSearchTerm,
   toggleCart,
+  onContactClick,
   siteSettings,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -75,10 +77,10 @@ export const Header: React.FC<HeaderProps> = ({
             Toys Shop
           </button>
           <button
-            className={`nav-link ${activePage === 'track' ? 'active' : ''}`}
-            onClick={() => handleNavClick('track')}
+            className="nav-link"
+            onClick={onContactClick}
           >
-            Track Order
+            Contact
           </button>
         </nav>
 
@@ -102,14 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
             />
           </div>
 
-          {/* Order tracking button */}
-          <button
-            className="action-btn track-btn-header"
-            onClick={() => handleNavClick('track')}
-            title="Track Order"
-          >
-            <Truck size={22} />
-          </button>
 
           {/* Cart trigger */}
           <button
@@ -144,10 +138,13 @@ export const Header: React.FC<HeaderProps> = ({
               Toys Shop
             </button>
             <button
-              className={`mobile-nav-link ${activePage === 'track' ? 'active' : ''}`}
-              onClick={() => handleNavClick('track')}
+              className="mobile-nav-link"
+              onClick={() => {
+                onContactClick();
+                setMobileMenuOpen(false);
+              }}
             >
-              Track Order
+              Contact
             </button>
           </div>
         </div>
@@ -309,7 +306,7 @@ export const Header: React.FC<HeaderProps> = ({
           color: var(--primary);
         }
         @media (max-width: 768px) {
-          .desktop-nav, .track-btn-header {
+          .desktop-nav {
             display: none;
           }
           .mobile-toggle {

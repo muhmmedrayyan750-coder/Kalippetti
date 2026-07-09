@@ -10,7 +10,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ setActivePage, siteSettings }) => {
   return (
-    <footer className="site-footer">
+    <footer id="contact-footer" className="site-footer">
       <div className="footer-container">
         {/* Brand Summary */}
           <div className="footer-brand">
@@ -40,7 +40,6 @@ export const Footer: React.FC<FooterProps> = ({ setActivePage, siteSettings }) =
           <ul className="footer-links">
             <li><button onClick={() => setActivePage('home')}>Home</button></li>
             <li><button onClick={() => { setActivePage('shop'); }}>All Toys</button></li>
-            <li><button onClick={() => setActivePage('track')}>Track Order</button></li>
             <li><a href={`https://wa.me/91${siteSettings.contactNumber}`} target="_blank" rel="noreferrer">Support Chat</a></li>
           </ul>
         </div>

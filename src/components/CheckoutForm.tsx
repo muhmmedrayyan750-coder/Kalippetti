@@ -7,7 +7,7 @@ import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from '../lib/persi
 interface CheckoutFormProps {
   cartItems: CartItem[];
   onBack: () => void;
-  onOrderPlaced: (orderId: string) => void;
+  onOrderPlaced: () => void;
   siteSettings: SiteSettings;
 }
 
@@ -115,7 +115,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     await writeStoredData(SHOP_STORAGE_KEYS.orders, updatedOrders);
 
     // 4. Format WhatsApp Message
-    const shopUrl = window.location.origin;
     let itemsText = '';
     cartItems.forEach((item) => {
       itemsText += `- *${item.quantity}x* ${item.product.title} (Rs. ${item.product.price}/each)\n`;
@@ -139,19 +138,16 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       `*Shipping:* ${shippingCharge === 0 ? 'FREE' : `Rs. ${shippingCharge}`}\n` +
       `*Total Payable:* *Rs. ${total}*\n` +
       `--------------------------------------\n` +
-      `*Track your order here:*\n` +
-      `${shopUrl}/?track=${orderId}\n` +
-      `--------------------------------------\n` +
-      `Please confirm my order. Thank you!`;
+      `Please confirm this order by phone or WhatsApp. Thank you!`;
 
     const encodedText = encodeURIComponent(whatsAppMessage);
-    const whatsappUrl = `https://wa.me/917012780209?text=${encodedText}`;
+    const whatsappUrl = `https://wa.me/91${siteSettings.contactNumber}?text=${encodedText}`;
 
     // 5. Open WhatsApp Web or App
     window.open(whatsappUrl, '_blank');
 
     // 6. Complete Order flow trigger
-    onOrderPlaced(orderId);
+    onOrderPlaced();
   };
 
   return (

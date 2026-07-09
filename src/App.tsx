@@ -9,7 +9,6 @@ import type { Product } from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
 import type { CartItem } from './components/CartDrawer';
 import CheckoutForm from './components/CheckoutForm';
-import OrderTracker from './components/OrderTracker';
 import CampaignProductSection from './components/CampaignProductSection';
 import AdminPanel from './components/AdminPanel';
 import { Star, ShoppingCart, X } from 'lucide-react';
@@ -73,10 +72,12 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
-  const [trackingIdParam, setTrackingIdParam] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-
+  const scrollToFooter = () => {
+    const footer = document.getElementById('contact-footer');
+    if (footer) footer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Initialize and load catalog data from shared storage
   useEffect(() => {
@@ -107,12 +108,6 @@ function App() {
       setCart(JSON.parse(savedCart));
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const trackId = params.get('track');
-    if (trackId) {
-      setActivePage('track');
-      setTrackingIdParam(trackId);
-    }
 
     void loadLocalData();
   }, []);
@@ -221,12 +216,10 @@ function App() {
     setActivePage('checkout');
   };
 
-  const handleOrderPlaced = (orderId: string) => {
-    // Clear shopping cart
+  const handleOrderPlaced = () => {
+    // Clear shopping cart and return to shop
     syncCart([]);
-    // Redirect to tracking page with parameter pre-filled
-    setTrackingIdParam(orderId);
-    setActivePage('track');
+    setActivePage('home');
   };
 
 
@@ -263,6 +256,7 @@ function App() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         toggleCart={() => setCartOpen(!cartOpen)}
+        onContactClick={scrollToFooter}
         siteSettings={siteSettings}
       />
 
@@ -370,10 +364,6 @@ function App() {
           />
         )}
 
-        {/* PAGE 4: TRACK ORDER */}
-        {activePage === 'track' && (
-          <OrderTracker orderIdParam={trackingIdParam} />
-        )}
 
       </main>
 
