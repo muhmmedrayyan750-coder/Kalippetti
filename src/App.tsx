@@ -10,6 +10,7 @@ import type { CartItem } from './components/CartDrawer';
 import CheckoutForm from './components/CheckoutForm';
 import CampaignProductSection from './components/CampaignProductSection';
 import AdminPanel from './components/AdminPanel';
+import HomeCarousel from './components/HomeCarousel';
 import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from './lib/persistence';
@@ -275,15 +276,8 @@ function App() {
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
-            {/* Static Promo Banners */}
-            <div className="home-static-banners">
-              <div className="home-banner-card" onClick={() => setActivePage('shop')}>
-                <img src="/kids-banner.jpg" alt="Kerala's Leading Kids Brand Banner" />
-              </div>
-              <div className="home-banner-card" onClick={() => setActivePage('shop')}>
-                <img src="/football-banner.jpg" alt="Football Set Banner" />
-              </div>
-            </div>
+            {/* Home Auto-rotational Banner Carousel */}
+            <HomeCarousel setActivePage={setActivePage} />
 
             {/* Campaign Combo Section */}
             {campaign && (
