@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   secondaryColor: '#ff6b00',
   instagramUrl: 'https://instagram.com',
   facebookUrl: 'https://facebook.com',
-  
+
   shippingCharge: 60,
   freeShippingThreshold: 999,
 };
@@ -62,7 +62,7 @@ function App() {
 
   // Global States
   const [products, setProducts] = useState<Product[]>([]);
-  
+
   const [campaign, setCampaign] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
@@ -275,7 +275,15 @@ function App() {
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
-            {/* No homepage ads or banners */}
+            {/* Static Promo Banners */}
+            <div className="home-static-banners">
+              <div className="home-banner-card" onClick={() => setActivePage('shop')}>
+                <img src="/kids-banner.jpg" alt="Kerala's Leading Kids Brand Banner" />
+              </div>
+              <div className="home-banner-card" onClick={() => setActivePage('shop')}>
+                <img src="/football-banner.jpg" alt="Football Set Banner" />
+              </div>
+            </div>
 
             {/* Campaign Combo Section */}
             {campaign && (

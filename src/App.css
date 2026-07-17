@@ -16,7 +16,49 @@
   gap: 60px;
 }
 
-/* Homepage banner styles removed */
+/* Homepage Fixed Promo Banners */
+.home-static-banners {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+}
+
+.home-banner-card {
+  width: 100%;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
+  cursor: pointer;
+  line-height: 0;
+  display: block;
+}
+
+.home-banner-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.home-banner-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(112, 38, 185, 0.12);
+  border-color: rgba(112, 38, 185, 0.2);
+}
+
+.home-banner-card:hover img {
+  transform: scale(1.015);
+}
+
+@media (max-width: 768px) {
+  .home-static-banners {
+    gap: 20px;
+  }
+}
 
 
 
