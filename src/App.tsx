@@ -91,7 +91,26 @@ function App() {
         ]);
 
         if (prodData && prodData.length > 0) {
-          setProducts(prodData);
+          const hasFootballCombo = prodData.some(p => p.id === 'p-football-combo-1');
+          if (!hasFootballCombo) {
+            const footballCombo: Product = {
+              id: "p-football-combo-1",
+              title: "Kalippetti Football Combo Set",
+              description: "⚽ Kalippetti Football Combo Set\nEverything You Need to Play. One Complete Kit.\n\nTake your football game to the next level with the Kalippetti Football Combo Set. Whether you're a beginner, school player, or football enthusiast, this all-in-one kit includes the essential gear for training and matches.\n\n📦 What's Included\n⚽ Premium Football\n🥅 Goalkeeper Gloves\n🦵 Football Shin Guards (Pair)\n🧦 Anti-Slip Football Socks\n🎒 Premium Sports Duffle Bag\n\n⭐ Features\nPremium Quality Materials\nDurable & Long Lasting\nComfortable for Daily Training\nLightweight & Easy to Carry\nPerfect for Kids, Teens & Beginners\nGreat Gift for Football Lovers\n\n💜 Why Choose Kalippetti?\nTrusted Sports Brand\nValue-for-Money Combo\nStylish & Modern Design\nCarefully Selected Football Essentials\nIdeal for School, Academy & Practice Sessions\n\n🎯 Perfect For\nFootball Practice\nSchool Sports\nFootball Academies\nWeekend Matches\nBirthday Gifts\nYoung Football Players\n\nKalippetti – Play More. Grow More. ⚽💜🧡",
+              price: 2999,
+              originalPrice: 3999,
+              category: "Sports Gear",
+              imageUrl: "/football-product.jpg",
+              rating: 4.8,
+              reviewsCount: 24,
+              inStock: true
+            };
+            const updated = [footballCombo, ...prodData];
+            setProducts(updated);
+            await writeStoredData('products', updated);
+          } else {
+            setProducts(prodData);
+          }
         } else {
           try {
             const resp = await fetch('/data/seedProducts.json');
@@ -276,7 +295,7 @@ function App() {
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
-            {/* Home Auto-rotational Banner Carousel */}
+            {/* Banner Carousel — firstcry style */}
             <HomeCarousel setActivePage={setActivePage} />
 
             {/* Campaign Combo Section */}

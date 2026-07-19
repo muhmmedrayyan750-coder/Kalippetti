@@ -8,23 +8,21 @@ interface HomeCarouselProps {
 const HomeCarousel: React.FC<HomeCarouselProps> = ({ setActivePage }) => {
     const images = [
         { src: '/kids-banner.jpg', alt: "Kerala's Leading Kids Brand" },
-        { src: '/football-banner.jpg', alt: 'All-in-One Football Kit' }
+        { src: '/football-banner.jpg', alt: 'All-in-One Football Kit' },
     ];
 
     const [currentIndex, setCurrentIndex] = useState(0);
-    const timerRef = useRef<any>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const stopAutoPlay = () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+    };
 
     const startAutoPlay = () => {
         stopAutoPlay();
         timerRef.current = setInterval(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 4000); // Shift every 4 seconds
-    };
-
-    const stopAutoPlay = () => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-        }
+            setCurrentIndex((prev) => (prev + 1) % images.length);
+        }, 4000);
     };
 
     useEffect(() => {
@@ -35,14 +33,14 @@ const HomeCarousel: React.FC<HomeCarouselProps> = ({ setActivePage }) => {
     const handlePrev = (e: React.MouseEvent) => {
         e.stopPropagation();
         stopAutoPlay();
-        setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+        setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
         startAutoPlay();
     };
 
     const handleNext = (e: React.MouseEvent) => {
         e.stopPropagation();
         stopAutoPlay();
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        setCurrentIndex((prev) => (prev + 1) % images.length);
         startAutoPlay();
     };
 
@@ -54,54 +52,52 @@ const HomeCarousel: React.FC<HomeCarouselProps> = ({ setActivePage }) => {
     };
 
     return (
-        <div
-            className="home-carousel-container"
-            onClick={() => setActivePage('shop')}
-        >
-            {/* Slides wrap */}
-            <div className="home-carousel-slides">
+        <div className="home-carousel-wrapper">
+            {/* Left Arrow — outside the image, firstcry-style */}
+            <button
+                className="carousel-arrow-btn carousel-arrow-left"
+                onClick={handlePrev}
+                aria-label="Previous Slide"
+            >
+                <ChevronLeft size={30} strokeWidth={2.5} />
+            </button>
+
+            {/* Banner Track */}
+            <div
+                className="home-carousel-track"
+                onClick={() => setActivePage('shop')}
+            >
                 {images.map((img, idx) => (
                     <div
                         key={idx}
-                        className={`home-carousel-slide ${idx === currentIndex ? 'active' : ''}`}
-                        style={{
-                            backgroundImage: `url(${img.src})`,
-                            display: idx === currentIndex ? 'block' : 'none'
-                        }}
+                        className={`home-carousel-slide${idx === currentIndex ? ' active' : ''}`}
+                        style={{ backgroundImage: `url(${img.src})` }}
                         role="img"
                         aria-label={img.alt}
                     />
                 ))}
+
+                {/* Dot Indicators */}
+                <div className="carousel-indicators">
+                    {images.map((_, idx) => (
+                        <button
+                            key={idx}
+                            className={`carousel-dot${idx === currentIndex ? ' active' : ''}`}
+                            onClick={(e) => handleDotClick(idx, e)}
+                            aria-label={`Go to slide ${idx + 1}`}
+                        />
+                    ))}
+                </div>
             </div>
 
-            {/* Nav Controls */}
+            {/* Right Arrow — outside the image, firstcry-style */}
             <button
-                className="carousel-nav-btn prev-btn"
-                onClick={handlePrev}
-                aria-label="Previous Slide"
-            >
-                <ChevronLeft size={24} />
-            </button>
-
-            <button
-                className="carousel-nav-btn next-btn"
+                className="carousel-arrow-btn carousel-arrow-right"
                 onClick={handleNext}
                 aria-label="Next Slide"
             >
-                <ChevronRight size={24} />
+                <ChevronRight size={30} strokeWidth={2.5} />
             </button>
-
-            {/* Indicator dots */}
-            <div className="carousel-indicators">
-                {images.map((_, idx) => (
-                    <button
-                        key={idx}
-                        className={`carousel-dot ${idx === currentIndex ? 'active' : ''}`}
-                        onClick={(e) => handleDotClick(idx, e)}
-                        aria-label={`Go to slide ${idx + 1}`}
-                    />
-                ))}
-            </div>
         </div>
     );
 };
