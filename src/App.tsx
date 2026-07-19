@@ -10,7 +10,7 @@ import type { CartItem } from './components/CartDrawer';
 import CheckoutForm from './components/CheckoutForm';
 import CampaignProductSection from './components/CampaignProductSection';
 import AdminPanel from './components/AdminPanel';
-import HomeCarousel from './components/HomeCarousel';
+
 import { Star, ShoppingCart, X } from 'lucide-react';
 import type { SiteSettings } from './types';
 import { readStoredData, writeStoredData, SHOP_STORAGE_KEYS } from './lib/persistence';
@@ -295,8 +295,15 @@ function App() {
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
           <div className="home-page-layout animate-slide-in container">
-            {/* Banner Carousel — firstcry style */}
-            <HomeCarousel setActivePage={setActivePage} />
+            {/* Ad Banners */}
+            <div className="ad-banners-section">
+              <div className="ad-banner-item" onClick={() => setActivePage('shop')}>
+                <img src="/football-banner.jpg" alt="Football Combo Set - Rs. 2999" />
+              </div>
+              <div className="ad-banner-item" onClick={() => setActivePage('shop')}>
+                <img src="/kids-banner.jpg" alt="50% Off on All Products" />
+              </div>
+            </div>
 
             {/* Campaign Combo Section */}
             {campaign && (
