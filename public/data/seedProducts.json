@@ -10,5 +10,17 @@
     "rating": 4.5,
     "reviewsCount": 12,
     "inStock": true
+  },
+  {
+    "id": "p-football-combo-1",
+    "title": "Kalippetti Football Combo Set",
+    "description": "⚽ Kalippetti Football Combo Set\nEverything You Need to Play. One Complete Kit.\n\nTake your football game to the next level with the Kalippetti Football Combo Set. Whether you're a beginner, school player, or football enthusiast, this all-in-one kit includes the essential gear for training and matches.\n\n📦 What's Included\n⚽ Premium Football\n🥅 Goalkeeper Gloves\n🦵 Football Shin Guards (Pair)\n🧦 Anti-Slip Football Socks\n🎒 Premium Sports Duffle Bag\n\n⭐ Features\nPremium Quality Materials\nDurable & Long Lasting\nComfortable for Daily Training\nLightweight & Easy to Carry\nPerfect for Kids, Teens & Beginners\nGreat Gift for Football Lovers\n\n💜 Why Choose Kalippetti?\nTrusted Sports Brand\nValue-for-Money Combo\nStylish & Modern Design\nCarefully Selected Football Essentials\nIdeal for School, Academy & Practice Sessions\n\n🎯 Perfect For\nFootball Practice\nSchool Sports\nFootball Academies\nWeekend Matches\nBirthday Gifts\nYoung Football Players\n\nKalippetti – Play More. Grow More. ⚽💜🧡",
+    "price": 2999,
+    "originalPrice": 3999,
+    "category": "Sports Gear",
+    "imageUrl": "/football-product.jpg",
+    "rating": 4.8,
+    "reviewsCount": 24,
+    "inStock": true
   }
 ]

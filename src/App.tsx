@@ -9,6 +9,7 @@ import CartDrawer from './components/CartDrawer';
 import type { CartItem } from './components/CartDrawer';
 import CheckoutForm from './components/CheckoutForm';
 import CampaignProductSection from './components/CampaignProductSection';
+import BannerSlider from './components/BannerSlider';
 import AdminPanel from './components/AdminPanel';
 
 import { Star, ShoppingCart, X } from 'lucide-react';
@@ -294,51 +295,45 @@ function App() {
 
         {/* PAGE 1: HOME PAGE */}
         {activePage === 'home' && (
-          <div className="home-page-layout animate-slide-in container">
-            {/* Ad Banners */}
-            <div className="ad-banners-section">
-              <div className="ad-banner-item" onClick={() => setActivePage('shop')}>
-                <img src="/football-banner.jpg" alt="Football Combo Set - Rs. 2999" />
-              </div>
-              <div className="ad-banner-item" onClick={() => setActivePage('shop')}>
-                <img src="/kids-banner.jpg" alt="50% Off on All Products" />
-              </div>
-            </div>
+          <>
+            {/* Full-bleed banner slider */}
+            <BannerSlider />
+            <div className="home-page-layout animate-slide-in container">
+              {/* Campaign Combo Section */}
+              {campaign && (
+                <CampaignProductSection
+                  campaignProduct={campaign}
+                  onAddToCart={(p, q) => handleAddToCart(p, q)}
+                  onBuyNow={(p, q) => handleBuyNow(p, q)}
+                />
+              )}
 
-            {/* Campaign Combo Section */}
-            {campaign && (
-              <CampaignProductSection
-                campaignProduct={campaign}
-                onAddToCart={(p, q) => handleAddToCart(p, q)}
-                onBuyNow={(p, q) => handleBuyNow(p, q)}
-              />
-            )}
-
-            {/* Featured Toys */}
-            <section className="featured-toys-section">
-              <div className="section-title-wrapper flex-between">
-                <div>
-                  <h2>{siteSettings.siteName} Featured Toys</h2>
-                  <p>{siteSettings.welcomeMessage}</p>
+              {/* Featured Toys */}
+              <section className="featured-toys-section">
+                <div className="section-title-wrapper flex-between">
+                  <div>
+                    <h2>{siteSettings.siteName} Featured Toys</h2>
+                    <p>{siteSettings.welcomeMessage}</p>
+                  </div>
+                  <button onClick={() => setActivePage('shop')} className="btn btn-light">
+                    View All Toys
+                  </button>
                 </div>
-                <button onClick={() => setActivePage('shop')} className="btn btn-light">
-                  View All Toys
-                </button>
-              </div>
 
-              <div className="products-grid">
-                {products.slice(0, 4).map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                    onBuyNow={handleBuyNow}
-                    onSelectProduct={setSelectedProductId}
-                  />
-                ))}
-              </div>
-            </section>
-          </div>
+                <div className="products-grid">
+                  {products.slice(0, 4).map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAddToCart={handleAddToCart}
+                      onBuyNow={handleBuyNow}
+                      onSelectProduct={setSelectedProductId}
+                    />
+                  ))}
+                </div>
+              </section>
+            </div>
+          </>
         )}
 
         {/* PAGE 2: SHOP PAGE */}
