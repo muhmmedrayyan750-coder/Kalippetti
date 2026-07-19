@@ -8,8 +8,7 @@ interface HomeCarouselProps {
 const HomeCarousel: React.FC<HomeCarouselProps> = ({ setActivePage }) => {
     const images = [
         { src: '/kids-banner.jpg', alt: "Kerala's Leading Kids Brand" },
-        { src: '/football-banner.jpg', alt: 'All-in-One Football Kit' },
-        { src: '/diapers-banner.png', alt: 'Diapers Sale Promotion' }
+        { src: '/football-banner.jpg', alt: 'All-in-One Football Kit' }
     ];
 
     const [currentIndex, setCurrentIndex] = useState(0);
